@@ -775,7 +775,7 @@ test.describe('Draft Lifecycle', () => {
         await expect(ndslHeadPage.locator('#selection-progress')).toContainText('1 /');
       });
 
-      test('can edit to empty selection then reselect', async ({ ndslHeadPage }) => {
+      test('can edit to empty selection', async ({ ndslHeadPage }) => {
         await ndslHeadPage.goto('/dashboard/students/');
 
         // Deselect the current pick (Partial from previous test)
@@ -783,23 +783,28 @@ test.describe('Draft Lifecycle', () => {
         await expect(ndslHeadPage.locator('#selection-progress')).toContainText('0 /');
 
         ndslHeadPage.on('dialog', dialog => dialog.accept());
-        let responsePromise = ndslHeadPage.waitForResponse('/dashboard/students/?/rankings');
+        const responsePromise = ndslHeadPage.waitForResponse('/dashboard/students/?/rankings');
         await ndslHeadPage.getByRole('button', { name: 'Update Selection' }).click();
-        let response = await responsePromise;
-        let responseData = await response.json();
+        const response = await responsePromise;
+        const responseData = await response.json();
         expect(responseData.type).toBe('success');
 
         await expect(ndslHeadPage.getByRole('button', { name: 'Update Selection' })).toBeVisible();
 
         // Stat cards should show 0 drafted for this round
         await expectStatCards(ndslHeadPage, { quota: 2, remaining: 2, drafted: 0 });
+      });
 
-        // Now re-select Eager to restore expected state for subsequent tests
+      test('can reselect after empty edit', async ({ ndslHeadPage }) => {
+        await ndslHeadPage.goto('/dashboard/students/');
+
+        // Re-select Eager to restore expected state for subsequent tests
         await ndslHeadPage.getByRole('button', { name: /Eager/u }).click();
-        responsePromise = ndslHeadPage.waitForResponse('/dashboard/students/?/rankings');
+        ndslHeadPage.on('dialog', dialog => dialog.accept());
+        const responsePromise = ndslHeadPage.waitForResponse('/dashboard/students/?/rankings');
         await ndslHeadPage.getByRole('button', { name: 'Update Selection' }).click();
-        response = await responsePromise;
-        responseData = await response.json();
+        const response = await responsePromise;
+        const responseData = await response.json();
         expect(responseData.type).toBe('success');
 
         await expectStatCards(ndslHeadPage, { quota: 2, remaining: 1, drafted: 1 });
