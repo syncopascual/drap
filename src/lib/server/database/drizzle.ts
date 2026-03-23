@@ -978,7 +978,13 @@ export async function getLabAutoAcknowledgeStatusInDraftRound(
             eq(schema.studentRankLab.draftId, draftId),
             eq(schema.studentRankLab.labId, labId),
             eq(schema.studentRankLab.index, BigInt(currRound)),
-            isNull(schema.facultyChoiceUser.studentUserId),
+            or(
+              isNull(schema.facultyChoiceUser.studentUserId),
+              and(
+                eq(schema.facultyChoiceUser.labId, labId),
+                eq(schema.facultyChoiceUser.round, currRound),
+              ),
+            ),
           ),
         )
         .then(assertSingle);

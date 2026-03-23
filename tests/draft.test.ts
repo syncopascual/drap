@@ -873,6 +873,15 @@ test.describe('Draft Lifecycle', () => {
         await cslHeadPage.goto('/dashboard/students/');
         await expectStatCards(cslHeadPage, { quota: 2, remaining: 1, drafted: 1 });
       });
+
+      test('can re-submit (edit) after selecting sole preferrer without 409', async ({
+        cslHeadPage,
+      }) => {
+        // Patient is CSL's only Round 1 preferrer and is already in facultyChoiceUser.
+        // Editing must NOT trigger the no-preferences auto-acknowledge guard.
+        const status = await postFacultyRankings(cslHeadPage, 1, 1);
+        expect(status).not.toBe(409);
+      });
     });
 
     test.describe('SCL', () => {
