@@ -23,10 +23,15 @@
 
   let chartMode = $state<'assigned' | 'remaining'>('assigned');
 
+  const PADDING_TOP = 20;
+  const PADDING_BOTTOM = 30;
   const width = 600;
   const height = 200;
+
   const chartWidth = width - 40 - 20;
+  //width - pad_left(40) - pad_right(20)
   const chartHeight = height - 20 - 30;
+  //height - pad_top(40) - pad_bot(20)
 
   let selectedLabId = $state<string>('');
   let hoveredPoint = $state<{
