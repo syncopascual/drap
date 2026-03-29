@@ -6,10 +6,10 @@
   import * as Tabs from '$lib/components/ui/tabs';
   import AvailableDraftees from '$lib/features/drafts/draftees/available/index.svelte';
   import DraftedDraftees from '$lib/features/drafts/draftees/drafted/index.svelte';
-  import type { FacultyChoiceRecord, Lab } from '$lib/features/drafts/types';
+  import type { Lab } from '$lib/features/drafts/types';
 
   import LabRoundSummary from './lab-round-summary.svelte';
-  import SystemLogsTab from './system-logs-tab.svelte';
+  import SystemLogsLoader from '$lib/features/drafts/system-logs/loader.svelte';
 
   type TabType = 'students' | 'labs' | 'logs';
 
@@ -17,10 +17,9 @@
     draftId: string;
     round: number;
     labs: Lab[];
-    records: FacultyChoiceRecord[];
   }
 
-  const { draftId, round, labs, records }: Props = $props();
+  const { draftId, round, labs }: Props = $props();
 
   let group: TabType = $state('students');
 </script>
@@ -61,6 +60,8 @@
     {/each}
   </Tabs.Content>
   <Tabs.Content value="logs">
-    <SystemLogsTab {draftId} {records} />
+    {#if group === 'logs'}
+      <SystemLogsLoader {draftId} />
+    {/if}
   </Tabs.Content>
 </Tabs.Root>

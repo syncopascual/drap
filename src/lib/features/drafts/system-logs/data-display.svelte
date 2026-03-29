@@ -9,10 +9,10 @@
 
   interface Props {
     draftId: string;
-    records: FacultyChoiceRecord[];
+    data: FacultyChoiceRecord[];
   }
 
-  const { draftId, records }: Props = $props();
+  const { draftId, data }: Props = $props();
 
   let showAutomated = $state(false);
 
@@ -34,7 +34,7 @@
     const eventByUnixKey: Record<string, SystemLogEvent> = {};
     const labByEventAndLabKey: Record<string, SystemLogLabGroup> = {};
 
-    for (const choice of records) {
+    for (const choice of data) {
       if (choice.userEmail === null && !showAutomated) continue;
 
       const unix = getUnixTime(choice.createdAt);

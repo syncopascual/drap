@@ -1,6 +1,7 @@
 <script lang="ts">
   import Loader2Icon from '@lucide/svelte/icons/loader-2';
 
+  import DataDisplay from './data-display.svelte';
   import Empty from '$lib/components/ui/empty/empty.svelte';
   import { createFetchDraftFacultyChoicesQuery } from '$lib/queries/fetch-draft-faculty-choices';
 
@@ -20,4 +21,5 @@
 {:else if query.isError}
   <Empty>Uh oh! An error has occurred.</Empty>
 {:else}
+  <DataDisplay data={query.data} />
 {/if}
