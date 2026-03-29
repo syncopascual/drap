@@ -12,7 +12,7 @@ const tracer = Tracer.byName(SERVICE_NAME);
 
 export async function GET({ params, locals: { session } }) {
   if (typeof session?.user === 'undefined') {
-    logger.fatal('attempt to fetch draft faculty choices');
+    logger.fatal('attempt to fetch draft faculty choices without session');
     error(401);
   }
 
