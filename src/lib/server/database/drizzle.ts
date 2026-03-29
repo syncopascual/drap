@@ -1761,6 +1761,52 @@ export async function getFacultyChoiceRecords(db: DbConnection, draftId: bigint)
   });
 }
 
+export async function getSystemLogsExport(db: DbConnection, draftId: bigint) {
+  return await tracer.asyncSpan('get-system-logs-export', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    const facultyUser = alias(schema.user, 'faculty_user');
+    const studentUser = alias(schema.user, 'student_user');
+    return await db
+      .select({
+        draftId: schema.facultyChoice.draftId,
+        round: schema.facultyChoice.round,
+        labId: schema.facultyChoice.labId,
+        createdAt: schema.facultyChoice.createdAt,
+        userId: schema.facultyChoice.userId,
+        userEmail: facultyUser.email,
+        studentEmails:
+          sql`coalesce(array_agg(${studentUser.email}) filter (where ${studentUser.email} is not null), '{}')`.mapWith(
+            vals => parse(StringArray, vals),
+          ),
+      })
+      .from(schema.facultyChoice)
+      .leftJoin(facultyUser, eq(schema.facultyChoice.userId, facultyUser.id))
+      .leftJoin(
+        schema.facultyChoiceUser,
+        and(
+          eq(schema.facultyChoice.draftId, schema.facultyChoiceUser.draftId),
+          eq(schema.facultyChoice.labId, schema.facultyChoiceUser.labId),
+          sql`${schema.facultyChoice.round} is not distinct from ${schema.facultyChoiceUser.round}`,
+        ),
+      )
+      .leftJoin(studentUser, eq(schema.facultyChoiceUser.studentUserId, studentUser.id))
+      .where(eq(schema.facultyChoice.draftId, draftId))
+      .groupBy(
+        schema.facultyChoice.draftId,
+        schema.facultyChoice.round,
+        schema.facultyChoice.labId,
+        schema.facultyChoice.createdAt,
+        schema.facultyChoice.userId,
+        facultyUser.email,
+      )
+      .orderBy(
+        desc(schema.facultyChoice.createdAt),
+        sql`${schema.facultyChoice.round} desc nulls first`,
+        asc(schema.facultyChoice.labId),
+      );
+  });
+}
+
 export async function getDraftAssignmentRecords(db: DbConnection, draftId: bigint) {
   return await tracer.asyncSpan('get-draft-assignment-records', async span => {
     span.setAttribute('database.draft.id', draftId.toString());

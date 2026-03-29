@@ -1,15 +1,18 @@
 <script lang="ts">
+  import DownloadIcon from '@lucide/svelte/icons/download';
   import { fromUnixTime, getUnixTime } from 'date-fns';
 
   import { Badge } from '$lib/components/ui/badge';
-
+  import { Button } from '$lib/components/ui/button';
   import type { FacultyChoiceRecord } from '$lib/features/drafts/types';
+  import { resolve } from '$app/paths';
 
   interface Props {
+    draftId: string;
     records: FacultyChoiceRecord[];
   }
 
-  const { records }: Props = $props();
+  const { draftId, records }: Props = $props();
 
   let showAutomated = $state(false);
 
@@ -76,14 +79,25 @@ Needs to distinguish the following events (one 'event' being a grouping of choic
 4. Lab received no interest, was auto-skipped [null faculty email, none of the above cases]
 -->
 
-<label class="mt-4 flex items-center space-x-2">
-  <input
-    class="h-4 w-4 rounded-lg border border-primary"
-    type="checkbox"
-    bind:checked={showAutomated}
-  />
-  <span>Show System Automation Logs</span>
-</label>
+<div class="mt-4 flex items-center justify-between">
+  <label class="flex items-center space-x-2">
+    <input
+      class="h-4 w-4 rounded-lg border border-primary"
+      type="checkbox"
+      bind:checked={showAutomated}
+    />
+    <span>Show System Automation Logs</span>
+  </label>
+  <Button
+    href={resolve(`/dashboard/drafts/${draftId}/system-logs.csv`)}
+    download
+    variant="outline"
+    size="sm"
+  >
+    <DownloadIcon class="mr-2 size-4" />
+    Export CSV
+  </Button>
+</div>
 
 <div class="my-4 overflow-auto rounded-lg border">
   <table class="w-full">

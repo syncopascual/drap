@@ -154,6 +154,15 @@
           <ArrowUpFromLineIcon class="size-4" />
           <span>Results</span>
         </Button>
+        <Button
+          href={resolve(`/dashboard/drafts/${draftId}/system-logs.csv`)}
+          download
+          variant="outline"
+          size="sm"
+        >
+          <ArrowUpFromLineIcon class="size-4" />
+          <span>System Logs</span>
+        </Button>
       </div>
     {/if}
   </div>

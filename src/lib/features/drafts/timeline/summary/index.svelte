@@ -241,5 +241,13 @@
       <ArrowUpFromLineIcon class="size-5" />
       <span>Export Final Results</span>
     </Button>
+    <Button
+      href={resolve(`/dashboard/drafts/${draftId}/system-logs.csv`)}
+      download
+      variant="outline"
+    >
+      <ArrowUpFromLineIcon class="size-5" />
+      <span>Export System Logs</span>
+    </Button>
   </div>
 </div>

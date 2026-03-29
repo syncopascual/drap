@@ -61,6 +61,6 @@
     {/each}
   </Tabs.Content>
   <Tabs.Content value="logs">
-    <SystemLogsTab {records} />
+    <SystemLogsTab {draftId} {records} />
   </Tabs.Content>
 </Tabs.Root>
