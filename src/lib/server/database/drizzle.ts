@@ -1771,10 +1771,7 @@ export interface SystemLogsExportRecord {
   studentEmails: string[];
 }
 
-export async function getSystemLogsExport(
-  db: DbConnection,
-  draftId: bigint,
-): Promise<SystemLogsExportRecord[]> {
+export async function getSystemLogsExport(db: DbConnection, draftId: bigint) {
   return await tracer.asyncSpan('get-system-logs-export', async span => {
     span.setAttribute('database.draft.id', draftId.toString());
     const facultyUser = alias(schema.user, 'faculty_user');
