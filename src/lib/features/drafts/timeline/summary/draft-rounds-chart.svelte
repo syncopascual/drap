@@ -117,7 +117,7 @@
           ? padding.top + chartHeight - (point.count / maxCount) * chartHeight
           : padding.top +
             chartHeight -
-            ((selectedLabId !== '' && chartFilter.selectedLabQuota !== ''
+            ((selectedLabId !== '' && chartFilter.selectedLabQuota !== null
               ? Math.max(0, chartFilter.selectedLabQuota - cumulativeUpTo(index, points))
               : Math.max(0, totalStudents - cumulativeUpTo(index, points))) /
               maxY) *
@@ -258,10 +258,9 @@
       />
 
       {#each chartData as point, index (point.label)}
-        {@const remaining =
-          selectedLabId !== '' && chartFilter.selectedLabQuota !== null
-            ? Math.max(0, chartFilter.selectedLabQuota - cumulativeUpTo(index, chartData))
-            : Math.max(0, totalStudents - cumulativeUpTo(index, chartData))}
+        {@const remaining = !(selectedLabId === '' || chartFilter.selectedLabQuota === null)
+          ? Math.max(0, chartFilter.selectedLabQuota - cumulativeUpTo(index, chartData))
+          : Math.max(0, totalStudents - cumulativeUpTo(index, chartData))}
         <g
           role="button"
           tabindex="0"
