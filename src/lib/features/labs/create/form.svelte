@@ -1,6 +1,7 @@
 <script lang="ts" module>
   export interface Props {
     onSuccess?: () => void;
+    draftId?: bigint;
   }
 </script>
 
@@ -14,7 +15,7 @@
   import { Input } from '$lib/components/ui/input';
   import { Label } from '$lib/components/ui/label';
 
-  const { onSuccess }: Props = $props();
+  const { onSuccess, draftId }: Props = $props();
 </script>
 
 <form
@@ -42,6 +43,7 @@
     };
   }}
 >
+  <input type="hidden" name="draft" value={draftId ?? ''} />
   <div class="space-y-2">
     <Label for="lab-id">Lab ID</Label>
     <Input type="text" required name="labId" id="lab-id" placeholder="dcs" pattern="[a-z0-9]+" />

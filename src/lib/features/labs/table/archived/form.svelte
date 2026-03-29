@@ -3,6 +3,7 @@
     labId: string;
     labName: string;
     disabled?: boolean;
+    draftId?: bigint;
   }
 </script>
 
@@ -15,7 +16,7 @@
   import { enhance } from '$app/forms';
   import { Tooltip, TooltipContent, TooltipTrigger } from '$lib/components/ui/tooltip';
 
-  const { labId, labName, disabled = false }: Props = $props();
+  const { labId, labName, disabled = false, draftId }: Props = $props();
 </script>
 
 <form
@@ -41,6 +42,7 @@
     };
   }}
 >
+  <input type="hidden" name="draft" value={draftId ?? ''} />
   <input type="hidden" name="restore" value={labId} />
   <Tooltip>
     <TooltipTrigger>

@@ -4,6 +4,7 @@
   export interface Props {
     labs: ActiveLab[];
     disabled?: boolean;
+    draftId?: bigint;
   }
 </script>
 
@@ -12,7 +13,7 @@
 
   import ArchiveForm from './archive-form.svelte';
 
-  const { labs, disabled = false }: Props = $props();
+  const { labs, disabled = false, draftId }: Props = $props();
 </script>
 
 <div class="space-y-4">
@@ -29,7 +30,7 @@
           <Table.Row>
             <Table.Cell class="w-full">{name}</Table.Cell>
             <Table.Cell class="w-0 text-right">
-              <ArchiveForm labId={id} {disabled} />
+              <ArchiveForm labId={id} {disabled} {draftId} />
             </Table.Cell>
           </Table.Row>
         {:else}

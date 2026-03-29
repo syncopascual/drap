@@ -27,4 +27,4 @@
   {/if}
 {/if}
 
-<LabTable {labs} disabled={isRegistrationActive} />
+<LabTable {labs} disabled={isRegistrationActive} draftId={draft?.id} />

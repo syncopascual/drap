@@ -4,6 +4,7 @@
   export interface Props {
     labs: ArchivedLab[];
     disabled?: boolean;
+    draftId?: bigint;
   }
 </script>
 
@@ -14,7 +15,7 @@
 
   import RestoreForm from './form.svelte';
 
-  const { labs, disabled = false }: Props = $props();
+  const { labs, disabled = false, draftId }: Props = $props();
 </script>
 
 <div class="rounded-md border">
@@ -34,7 +35,7 @@
             <span class="text-sm">{format(deletedAt, 'PPP')}</span>
           </Table.Cell>
           <Table.Cell class="w-0 text-right">
-            <RestoreForm labId={id} labName={name} {disabled} />
+            <RestoreForm labId={id} labName={name} {disabled} {draftId} />
           </Table.Cell>
         </Table.Row>
       {:else}

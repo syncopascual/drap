@@ -2,6 +2,7 @@
   export interface Props {
     labId: string;
     disabled?: boolean;
+    draftId?: bigint;
   }
 </script>
 
@@ -14,7 +15,7 @@
   import { enhance } from '$app/forms';
   import { Tooltip, TooltipContent, TooltipTrigger } from '$lib/components/ui/tooltip';
 
-  const { labId, disabled = false }: Props = $props();
+  const { labId, disabled = false, draftId }: Props = $props();
 </script>
 
 <form
@@ -40,6 +41,7 @@
     };
   }}
 >
+  <input type="hidden" name="draft" value={draftId ?? ''} />
   <input type="hidden" name="archive" value={labId} />
   <Tooltip>
     <TooltipTrigger>

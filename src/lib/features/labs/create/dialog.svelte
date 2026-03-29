@@ -8,9 +8,10 @@
 
   interface Props {
     disabled?: boolean;
+    draftId?: bigint;
   }
 
-  const { disabled = false }: Props = $props();
+  const { disabled = false, draftId }: Props = $props();
 
   let open = $state(false);
 
@@ -35,6 +36,6 @@
         Add a new research laboratory to the system. Labs can be archived later if no longer needed.
       </Dialog.Description>
     </Dialog.Header>
-    <CreateForm onSuccess={handleSuccess} />
+    <CreateForm onSuccess={handleSuccess} {draftId} />
   </Dialog.Content>
 </Dialog.Root>

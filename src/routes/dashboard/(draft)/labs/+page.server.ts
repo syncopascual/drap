@@ -5,7 +5,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/database';
 import {
   deleteLab,
-  getActiveDraftForShare,
+  getDraftByIdForShare,
   getLabRegistry,
   insertNewLab,
   lockLabCatalogForMutation,
@@ -17,14 +17,17 @@ import { Tracer } from '$lib/server/telemetry/tracer';
 const LabFormData = v.object({
   labId: v.pipe(v.string(), v.minLength(1)),
   name: v.pipe(v.string(), v.minLength(1)),
+  draftIdRaw: v.optional(v.pipe(v.string(), v.minLength(0))),
 });
 
 const ArchiveFormData = v.object({
   archive: v.pipe(v.string(), v.minLength(1)),
+  draftIdRaw: v.optional(v.pipe(v.string(), v.minLength(0))),
 });
 
 const RestoreFormData = v.object({
   restore: v.pipe(v.string(), v.minLength(1)),
+  draftIdRaw: v.optional(v.pipe(v.string(), v.minLength(0))),
 });
 
 const SERVICE_NAME = 'routes.dashboard.admin.labs';
@@ -83,14 +86,17 @@ export const actions = {
 
     return await tracer.asyncSpan('action.lab', async () => {
       const data = await request.formData();
-      const { labId, name } = v.parse(LabFormData, decode(data));
+      const { labId, name, draftIdRaw } = v.parse(LabFormData, decode(data));
       logger.debug('creating lab', { labId, name });
 
       await db.transaction(
         async db => {
           await lockLabCatalogForMutation(db);
-          const draft = await getActiveDraftForShare(db);
-          if (typeof draft !== 'undefined' && draft.currRound === 0) {
+          const draft =
+            draftIdRaw && draftIdRaw !== ''
+              ? await getDraftByIdForShare(db, BigInt(draftIdRaw))
+              : null;
+          if (typeof draft !== 'undefined' && draft !== null && draft.currRound === 0) {
             logger.fatal('cannot mutate lab catalog during registration');
             error(403, 'Cannot modify labs while draft registration is ongoing.');
           }
@@ -119,14 +125,17 @@ export const actions = {
 
     return await tracer.asyncSpan('action.archive', async () => {
       const data = await request.formData();
-      const { archive: labId } = v.parse(ArchiveFormData, decode(data));
+      const { archive: labId, draftIdRaw } = v.parse(ArchiveFormData, decode(data));
       logger.debug('archiving lab', { labId });
 
       await db.transaction(
         async db => {
           await lockLabCatalogForMutation(db);
-          const draft = await getActiveDraftForShare(db);
-          if (typeof draft !== 'undefined' && draft.currRound === 0) {
+          const draft =
+            draftIdRaw && draftIdRaw !== ''
+              ? await getDraftByIdForShare(db, BigInt(draftIdRaw))
+              : null;
+          if (typeof draft !== 'undefined' && draft !== null && draft.currRound === 0) {
             logger.fatal('cannot mutate lab catalog during registration');
             error(403, 'Cannot modify labs while draft registration is ongoing.');
           }
@@ -155,14 +164,17 @@ export const actions = {
 
     return await tracer.asyncSpan('action.restore', async () => {
       const data = await request.formData();
-      const { restore: labId } = v.parse(RestoreFormData, decode(data));
+      const { restore: labId, draftIdRaw } = v.parse(RestoreFormData, decode(data));
       logger.debug('restoring lab', { labId });
 
       await db.transaction(
         async db => {
           await lockLabCatalogForMutation(db);
-          const draft = await getActiveDraftForShare(db);
-          if (typeof draft !== 'undefined' && draft.currRound === 0) {
+          const draft =
+            draftIdRaw && draftIdRaw !== ''
+              ? await getDraftByIdForShare(db, BigInt(draftIdRaw))
+              : null;
+          if (typeof draft !== 'undefined' && draft !== null && draft.currRound === 0) {
             logger.fatal('cannot mutate lab catalog during registration');
             error(403, 'Cannot modify labs while draft registration is ongoing.');
           }
