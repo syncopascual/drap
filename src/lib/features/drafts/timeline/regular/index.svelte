@@ -55,11 +55,13 @@
       <DraftedDraftees {draftId}>No drafted students yet.</DraftedDraftees>
     </div>
   </Tabs.Content>
-  <Tabs.Content value="labs">
-    {#each labs as lab (lab.id)}
-      <LabRoundSummary {draftId} {round} {lab} />
-    {/each}
-  </Tabs.Content>
+  <div class="min-w-0 overflow-auto">
+    <Tabs.Content value="labs">
+      {#each labs as lab (lab.id)}
+        <LabRoundSummary {draftId} {round} {lab} />
+      {/each}
+    </Tabs.Content>
+  </div>
   <Tabs.Content value="logs">
     <SystemLogsTab {draftId} {records} />
   </Tabs.Content>
