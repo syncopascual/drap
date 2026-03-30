@@ -13,7 +13,7 @@ engineStrict: true
 minimumReleaseAge: 1440 # 1 Day
 
 minimumReleaseAgeExclude:
-  - 'inngest@4.0.4'
+  - 'shadcn-svelte@1.2.5'
 
 strictDepBuilds: true
 
