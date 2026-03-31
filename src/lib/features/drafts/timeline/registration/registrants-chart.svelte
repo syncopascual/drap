@@ -1,5 +1,16 @@
 <script lang="ts">
-  import { max, min } from 'd3-array';
+  import { AreaChart } from 'layerchart';
+  import { cubicOut } from 'svelte/easing';
+  import { max } from 'd3-array';
+  import { format } from 'd3-format';
+  import type { MotionOptions } from 'layerchart/utils/motion.svelte';
+  import { prefersReducedMotion } from 'svelte/motion';
+  import { scalePoint, scaleTime } from 'd3-scale';
+  import { tickStep } from 'd3-array';
+
+  import * as Card from '$lib/components/ui/card';
+  import * as Chart from '$lib/components/ui/chart';
+  import { Badge } from '$lib/components/ui/badge';
 
   interface Props {
     draftCreatedAt: Date;
@@ -11,90 +22,103 @@
 
   const { draftCreatedAt, registrationClosedAt, startedAt, requestedAt, timelineData }: Props = $props();
 
-  // Chart bounds: start from draft creation, end at startedAt or current time
-  const startBound = $derived(draftCreatedAt);
-  const endBound = $derived(startedAt ?? requestedAt);
+  const endDate = $derived(startedAt ?? requestedAt);
   
-  // First data point may be after draft created, so find the actual earliest date
-  const firstDataDate = $derived(
-    timelineData.length > 0 
-      ? min(timelineData, d => d.date.getTime()) ?? startBound.getTime()
-      : startBound.getTime()
-  );
-  const lastDataDate = $derived(
-    timelineData.length > 0 
-      ? max(timelineData, d => d.date.getTime()) ?? endBound.getTime()
-      : endBound.getTime()
+  // Transform timeline data for chart
+  const chartPoints = $derived(
+    timelineData.map(d => ({
+      date: d.date,
+      label: d.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      count: d.count,
+    }))
   );
 
-  const yMax = $derived(max(timelineData, d => d.count) ?? 0);
+  const yMax = $derived(max(timelineData, d => d.count) ?? 1);
+  const yTicks = $derived.by(() => {
+    const step = Math.max(1, tickStep(0, yMax, 4));
+    const ticks = Array.from(
+        { length: Math.floor(yMax / step) + 1 },
+        (_, index) => index * step,
+    );
+    if (ticks.at(-1) === yMax) return ticks;
+    return [...ticks, yMax];
+    });
+  const integerFormat = format('d');
 
-  const width = 100;
-  const height = 100;
-  const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+  const chartConfig = $derived({
+    count: {
+      label: 'Registrants',
+      color: 'var(--primary)',
+    },
+  } satisfies Chart.ChartConfig);
 
-  function getX(date: Date): number {
-    if (!date || !startBound || !endBound) return padding.left;
-    const start = firstDataDate;
-    const end = lastDataDate;
-    const range = end - start;
-    if (range === 0) return padding.left;
-    return padding.left + ((date.getTime() - start) / range) * (width - padding.left - padding.right);
-  }
+  const chartSeries = $derived([
+    {
+      key: 'count',
+      label: 'Registrants',
+      color: 'var(--color-count)',
+    },
+  ]);
 
-  function getY(count: number): number {
-    if (yMax === 0) return height - padding.bottom;
-    return height - padding.bottom - (count / yMax) * (height - padding.top - padding.bottom);
-  }
-
-  const regClosedX = $derived(getX(registrationClosedAt));
+  const { chartMotion, axisMotion } = $derived<{
+    chartMotion: MotionOptions;
+    axisMotion: MotionOptions;
+  }>(
+    prefersReducedMotion.current
+      ? { chartMotion: 'none', axisMotion: 'none' }
+      : {
+          chartMotion: { type: 'tween', duration: 280, easing: cubicOut },
+          axisMotion: { type: 'tween', duration: 220, easing: cubicOut },
+        },
+  );
 </script>
 
-<div class="h-80 w-full p-4 border rounded-lg">
-  <div class="text-sm text-muted-foreground mb-4">
-    <span>Created: {draftCreatedAt.toLocaleDateString()}</span>
-    <span class="mx-2">|</span>
-    <span>Closed: {registrationClosedAt.toLocaleDateString()}</span>
-    {#if startedAt}
-      <span class="mx-2">|</span>
-      <span>Started: {startedAt.toLocaleDateString()}</span>
-    {:else}
-      <span class="mx-2">|</span>
-      <span>Current: {requestedAt.toLocaleDateString()}</span>
-    {/if}
-  </div>
-
-  <svg viewBox="0 0 {width} {height}" class="w-full h-full" preserveAspectRatio="none">
-    <!-- Y axis labels -->
-    {#each Array(Math.ceil(yMax / 5) + 1) as _, i}
-      {@const yVal = i * 5}
-      {@const yPos = getY(yVal)}
-      {#if yPos >= padding.top}
-        <line x1={padding.left} y1={yPos} x2={width - padding.right} y2={yPos} stroke="#e5e7eb" stroke-width="0.5" />
-        <text x={padding.left - 5} y={yPos + 3} text-anchor="end" font-size="3" fill="#6b7280">{yVal}</text>
-      {/if}
-    {/each}
-
-    <!-- Registration closed reference line -->
-    {#if regClosedX >= padding.left && regClosedX <= width - padding.right}
-      <line x1={regClosedX} y1={padding.top} x2={regClosedX} y2={height - padding.bottom} stroke="#ef4444" stroke-width="1" stroke-dasharray="3" />
-      <text x={regClosedX} y={padding.top - 2} text-anchor="middle" font-size="3" fill="#ef4444">Registration Closed</text>
-    {/if}
-
-    <!-- Area fill -->
-    {#if timelineData.length > 0}
-      <path
-        d={`M ${padding.left} ${height - padding.bottom} ${timelineData.map(d => `${getX(d.date)} ${getY(d.count)}`).join(' L ')} ${getX(endBound)} ${height - padding.bottom} Z`}
-        fill="#3b82f6"
-        fill-opacity="0.1"
-      />
-      <!-- Line -->
-      <path
-        d={`M ${timelineData.map(d => `${getX(d.date)} ${getY(d.count)}`).join(' L ')}`}
-        fill="none"
-        stroke="#3b82f6"
-        stroke-width="1.5"
-      />
-    {/if}
-  </svg>
-</div>
+<Card.Root class="overflow-hidden border-border/60 bg-linear-to-br from-muted/40 via-background to-muted/10 shadow-xs">
+  <Card.Header class="gap-5">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div class="space-y-1.5 lg:flex-1">
+        <div class="flex flex-wrap items-center gap-2">
+          <Card.Title>Registrants over time</Card.Title>
+          <Badge variant="default">Cumulative</Badge>
+        </div>
+        <Card.Description>
+          Shows cumulative registrant count from draft creation to registration close.
+        </Card.Description>
+      </div>
+      <div class="text-sm text-muted-foreground">
+        {#if startedAt}
+          Started: {startedAt.toLocaleDateString()}
+        {:else}
+          Current: {requestedAt.toLocaleDateString()}
+        {/if}
+      </div>
+    </div>
+  </Card.Header>
+  <Card.Content class="pt-0">
+    <Chart.Container id="registrants-chart" config={chartConfig} class="min-h-[280px] w-full">
+      <AreaChart
+        data={chartPoints}
+        x="label"
+        y="count"
+        xScale={scalePoint().padding(0)}
+        padding={{ top: 8, right: 10, bottom: 20, left: 20 }}
+        series={chartSeries}
+        legend={false}
+        points
+        grid
+        yDomain={[0, yMax]}
+        props={{
+          area: { fillOpacity: 0.22, motion: chartMotion, line: { strokeWidth: 3, motion: chartMotion } },
+          points: { r: 5.5, motion: chartMotion },
+          tooltip: { context: { mode: 'band' } },
+          xAxis: { grid: false, motion: axisMotion, tickLabelProps: { dy: 8 } },
+          yAxis: { ticks: yTicks, format: value => integerFormat(value), motion: axisMotion, tickLabelProps: { dx: -8 } },
+        }}
+      >
+        {#snippet tooltip()}
+          <Chart.Tooltip indicator="dot" labelKey="label" />
+        {/snippet}
+      </AreaChart>
+    </Chart.Container>
+  </Card.Content>
+</Card.Root>
