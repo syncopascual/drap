@@ -18,10 +18,7 @@
 
   let sheetOpen = $state(false);
 
-  const query = createFetchInvitedUsersQuery(
-    () => type,
-    () => sheetOpen,
-  );
+  const query = createFetchInvitedUsersQuery(() => (sheetOpen ? type : null));
 </script>
 
 <Sheet.Root bind:open={sheetOpen}>
