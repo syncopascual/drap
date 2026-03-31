@@ -263,10 +263,10 @@ export const actions = {
                 activeDraft.currRound,
                 students,
               );
-              const invalidStudents = students.filter(id => !validStudentIds.has(id));
-              if (invalidStudents.length > 0) {
+              const invalidStudent = students.find(id => !validStudentIds.has(id));
+              if (typeof invalidStudent !== 'undefined') {
                 logger.fatal('students did not choose this lab for current round', void 0, {
-                  'invalid.student_ids': invalidStudents,
+                  'invalid.student_id': invalidStudent,
                 });
                 error(409);
               }
