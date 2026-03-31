@@ -1,4 +1,5 @@
 <script lang="ts">
+  import TriangleAlertIcon from '@lucide/svelte/icons/triangle-alert';
   import {
     type ColumnFiltersState,
     createColumnHelper,
@@ -38,6 +39,15 @@
           onclick: header.column.getToggleSortingHandler(),
         }),
       cell: info => info.getValue(),
+    }),
+
+    columnHelper.accessor('id', {
+      id: 'isLate',
+      header: '',
+      cell: ({ row }) => {
+        const isLate = (row.original as Student & { isLate?: boolean }).isLate;
+        return isLate ? renderComponent(TriangleAlertIcon, { class: 'size-4 text-amber-500 ml-2' }) : null;
+      },
     }),
 
     columnHelper.accessor(
