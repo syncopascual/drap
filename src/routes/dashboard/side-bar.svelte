@@ -14,7 +14,6 @@
   import * as Avatar from '$lib/components/ui/avatar';
   import * as Drawer from '$lib/components/ui/drawer';
   import * as Sidebar from '$lib/components/ui/sidebar';
-  import BottomNav from '$lib/components/bottom-nav.svelte';
   import Button from '$lib/components/ui/button/button.svelte';
   import Logo from '$lib/assets/logo-DRAP-icon-colored.svg';
   import ModeSwitcher from '$lib/components/mode-switcher.svelte';
@@ -24,7 +23,6 @@
   import { page } from '$app/state';
   import { resolve } from '$app/paths';
   import type { schema } from '$lib/server/database/drizzle';
-  import { TooltipProvider } from '$lib/components/ui/tooltip';
 
   interface Props {
     user?: schema.User;
@@ -340,35 +338,28 @@
   </Sidebar.Footer>
 {/snippet}
 
-<TooltipProvider>
-  {#if !sidebar.openMobile}
-    <div class="fixed bottom-0 z-45 w-full md:hidden">
-      <BottomNav {sidebar} />
-    </div>
-  {/if}
-  {#if sidebar.isMobile}
-    <Drawer.Root
-      bind:open={() => sidebar.openMobile, v => sidebar.setOpenMobile(v)}
-      direction="bottom"
+{#if sidebar.isMobile}
+  <Drawer.Root
+    bind:open={() => sidebar.openMobile, v => sidebar.setOpenMobile(v)}
+    direction="bottom"
+  >
+    <Drawer.Content
+      data-sidebar="sidebar"
+      data-slot="sidebar"
+      data-mobile="true"
+      class="w-dvw bg-sidebar p-0 text-sidebar-foreground"
     >
-      <Drawer.Content
-        data-sidebar="sidebar"
-        data-slot="sidebar"
-        data-mobile="true"
-        class="w-dvw bg-sidebar p-0 text-sidebar-foreground"
-      >
-        <Drawer.Header class="sr-only">
-          <Drawer.Title>Sidebar</Drawer.Title>
-          <Drawer.Description>Displays the mobile sidebar.</Drawer.Description>
-        </Drawer.Header>
-        <div class="flex h-full w-full flex-col">
-          {@render sidebarSections()}
-        </div>
-      </Drawer.Content>
-    </Drawer.Root>
-  {:else}
-    <Sidebar.Root collapsible="icon" class="border-r border-border">
-      {@render sidebarSections()}
-    </Sidebar.Root>
-  {/if}
-</TooltipProvider>
+      <Drawer.Header class="sr-only">
+        <Drawer.Title>Sidebar</Drawer.Title>
+        <Drawer.Description>Displays the mobile sidebar.</Drawer.Description>
+      </Drawer.Header>
+      <div class="flex h-full w-full flex-col">
+        {@render sidebarSections()}
+      </div>
+    </Drawer.Content>
+  </Drawer.Root>
+{:else}
+  <Sidebar.Root collapsible="icon" class="border-r border-border">
+    {@render sidebarSections()}
+  </Sidebar.Root>
+{/if}

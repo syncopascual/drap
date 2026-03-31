@@ -6,12 +6,13 @@
   import { cn } from '$lib/components/ui/utils';
   import { page } from '$app/state';
   import { resolve } from '$app/paths';
+  import { useSidebar } from '$lib/components/ui/sidebar';
 
-  let { sidebar } = $props();
+  const sidebar = useSidebar();
 </script>
 
 <menu
-  class="flex w-full items-center justify-between gap-2 border-t border-border bg-background/90 px-10 py-2 backdrop-blur-md"
+  class="flex w-full items-center justify-between gap-2 border-t border-border bg-background/90 px-10 py-2 backdrop-blur-md md:hidden"
 >
   <li class="flex size-12 place-content-center items-center">
     <button
@@ -22,7 +23,6 @@
       <span class="sr-only">Toggle Sidebar</span>
     </button>
   </li>
-
   <li class="flex size-12 place-content-center items-center">
     <div
       class={cn(
@@ -38,7 +38,6 @@
       </a>
     </div>
   </li>
-
   <li class="flex size-12 place-content-center items-center">
     <a
       href={resolve('/')}
