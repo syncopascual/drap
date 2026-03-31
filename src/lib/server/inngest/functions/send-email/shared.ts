@@ -93,12 +93,15 @@ export async function createEmailMessage(event: RenderableEmailEvent, sender: Se
     case 'draft/round.submitted.email.batch':
     case 'draft/round.submitted.email.fallback':
       recipient = event.data.recipientEmail;
-      subject = `[DRAP] Acknowledgement from ${event.data.labId.toUpperCase()} for Round #${event.data.round} of Draft #${event.data.draftId}`;
+      subject = event.data.isUpdate
+        ? `[DRAP] Preference Update from ${event.data.labId.toUpperCase()} for Round #${event.data.round} of Draft #${event.data.draftId}`
+        : `[DRAP] Acknowledgement from ${event.data.labId.toUpperCase()} for Round #${event.data.round} of Draft #${event.data.draftId}`;
       html = await renderer.render(RoundSubmitted, {
         props: {
           labName: event.data.labName,
           round: event.data.round,
           draftId: event.data.draftId,
+          isUpdate: event.data.isUpdate,
         } satisfies ComponentProps<typeof RoundSubmitted>,
       });
       break;

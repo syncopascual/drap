@@ -153,7 +153,7 @@ export const actions = {
 
       const draftId = BigInt(draft);
       try {
-        const { submittedRound, roundsToNotify } = await db.transaction(
+        const { submittedRound, roundsToNotify, isUpdate } = await db.transaction(
           async db => {
             const activeDraft = await getDraftByIdForUpdate(db, draftId);
             if (typeof activeDraft === 'undefined' || activeDraft.activePeriodEnd !== null) {
@@ -215,6 +215,7 @@ export const actions = {
               activeDraft.currRound,
               lab,
             );
+            const isUpdate = typeof existingChoice !== 'undefined';
             const { quota, selected } = await getLabQuotaAndSelectedStudentCountInDraft(
               db,
               draftId,
@@ -317,7 +318,7 @@ export const actions = {
               }
             }
 
-            return { submittedRound, roundsToNotify };
+            return { submittedRound, roundsToNotify, isUpdate };
           },
           { isolationLevel: 'read committed' },
         );
@@ -329,13 +330,21 @@ export const actions = {
           getFacultyAndStaff(db),
         ]);
 
-        const roundSubmittedEvents = staffEmails.map(email =>
+        // INSERT: notify staff + all faculty; UPDATE: notify staff only
+        const initialRecipients = new Set(staffEmails);
+
+        if (!isUpdate) for (const person of facultyAndStaff) initialRecipients.add(person.email);
+
+        const roundSubmittedRecipients = Array.from(initialRecipients);
+
+        const roundSubmittedEvents = roundSubmittedRecipients.map(email =>
           RoundSubmittedBatchEmailEvent.create({
             draftId: Number(draftId),
             round: submittedRound,
             labId: lab,
             labName,
             recipientEmail: email,
+            isUpdate,
           }),
         );
 

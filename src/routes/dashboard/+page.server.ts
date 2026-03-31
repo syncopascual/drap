@@ -91,6 +91,7 @@ const SendEmailFormData = v.variant('event', [
     round: v.number(),
     labId: v.string(),
     recipientEmail: v.string(),
+    isUpdate: v.optional(v.boolean(), false),
   }),
   v.object({
     event: v.literal('draft/lottery.intervened.email.batch'),
@@ -346,6 +347,7 @@ export const actions = {
                     labId: parsed.labId,
                     labName,
                     recipientEmail: parsed.recipientEmail,
+                    isUpdate: parsed.isUpdate,
                   }),
                 );
                 break;
