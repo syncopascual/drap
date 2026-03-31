@@ -1192,12 +1192,12 @@ export async function validateStudentsChoseLabInRound(
           eq(schema.studentRankLab.labId, labId),
           eq(schema.studentRankLab.index, BigInt(round)),
           inArray(schema.studentRankLab.userId, studentUserIds),
-          sql`${schema.studentRankLab.userId} NOT IN (${draftedByOtherLab})`,
+          sql`${schema.studentRankLab.userId} not in (${draftedByOtherLab})`,
         ),
       )
       .for('update');
 
-    return new Set(validRows.map(row => row.userId));
+    return new Set(validRows.map(({ userId }) => userId));
   });
 }
 
