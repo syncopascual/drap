@@ -226,13 +226,12 @@ export const actions = {
             let baseSelected = selected;
             if (typeof existingChoice !== 'undefined') {
               if (existingChoice.userId !== facultyUserId)
-                logger.info("lab head editing another lab head's submission", {
+                logger.warn("lab head editing another lab head's submission", {
                   'draft.id': draftId.toString(),
                   'draft.round.current': activeDraft.currRound,
                   'original.user_id': existingChoice.userId,
                   'editing.user_id': facultyUserId,
                 });
-
               const selectedInCurrentRound = await getLabSelectedStudentCountInDraftRound(
                 db,
                 draftId,
@@ -332,12 +331,9 @@ export const actions = {
 
         // INSERT: notify staff + all faculty; UPDATE: notify staff only
         const initialRecipients = new Set(staffEmails);
-
         if (!isUpdate) for (const person of facultyAndStaff) initialRecipients.add(person.email);
 
-        const roundSubmittedRecipients = Array.from(initialRecipients);
-
-        const roundSubmittedEvents = roundSubmittedRecipients.map(email =>
+        const roundSubmittedEvents = Array.from(initialRecipients, email =>
           RoundSubmittedBatchEmailEvent.create({
             draftId: Number(draftId),
             round: submittedRound,
