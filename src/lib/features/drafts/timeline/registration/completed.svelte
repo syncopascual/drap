@@ -1,6 +1,6 @@
 <script lang="ts">
-  import RegistrantsChart from './registrants-chart.svelte';
   import DrafteesSheet from './draftees-sheet.svelte';
+  import RegistrantsChart from './registrants-chart.svelte';
 
   interface Props {
     draftId: string;
@@ -37,6 +37,6 @@
   />
 
   <div class="flex justify-end">
-    <DrafteesSheet {draftId} {registrationClosedAt} />
+    <DrafteesSheet {draftId} />
   </div>
 </div>

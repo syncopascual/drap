@@ -1,11 +1,11 @@
 <script lang="ts">
+  import { SvelteMap, } from 'svelte/reactivity';
   import * as Sheet from '$lib/components/ui/sheet';
+  import DataTable from '$lib/features/drafts/draftees/data-table.svelte';
   import { Button } from '$lib/components/ui/button';
-  import { Input } from '$lib/components/ui/input';
-  import { ChevronRightIcon, TriangleAlertIcon } from '@lucide/svelte';
   import { createFetchDrafteesQuery } from '$lib/queries/fetch-draftees';
   import { createFetchDraftLateRegistrantsQuery } from '$lib/queries/fetch-draft-late-registrants';
-  import DataTable from '$lib/features/drafts/draftees/data-table.svelte';
+  import { Input } from '$lib/components/ui/input';
   import type { Student } from '$lib/features/drafts/types';
 
   interface ExtendedStudent extends Student {
@@ -14,10 +14,9 @@
 
   interface Props {
     draftId: string;
-    registrationClosedAt: Date;
   }
 
-  const { draftId, registrationClosedAt }: Props = $props();
+  const { draftId }: Props = $props();
 
   const drafteesQuery = $derived(createFetchDrafteesQuery(draftId, d => d));
   const lateQuery = $derived(createFetchDraftLateRegistrantsQuery(draftId, d => d));
@@ -27,7 +26,7 @@
   const allStudents = $derived.by(() => {
     const draftees = drafteesQuery.data ?? [];
     const late = lateQuery.data ?? [];
-    const map = new Map<string, Student>();
+    const map = new SvelteMap<string, Student>();
     for (const s of draftees) map.set(s.id, s);
     for (const s of late) if (!map.has(s.id)) map.set(s.id, s);
     return Array.from(map.values()).map(s => ({ ...s, isLate: lateIds.has(s.id) })) as ExtendedStudent[];
@@ -46,9 +45,9 @@
         s.email.toLowerCase().includes(q)
       );
     }
-    if (showLateOnly) {
+    if (showLateOnly) 
       result = result.filter(s => s.isLate);
-    }
+    
     return result;
   });
 </script>
@@ -88,9 +87,7 @@
       </div>
     {:else}
       <DataTable data={filteredStudents}>
-        {#snippet children()}
-          No students found
-        {/snippet}
+        No students found
       </DataTable>
     {/if}
   </Sheet.Content>

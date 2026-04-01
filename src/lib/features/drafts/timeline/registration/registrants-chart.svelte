@@ -1,12 +1,12 @@
 <script lang="ts">
+  import { isAfter, startOfDay } from 'date-fns';
   import { Area, AreaChart, LinearGradient } from 'layerchart';
   import { cubicOut } from 'svelte/easing';
-  import { max } from 'd3-array';
   import { format } from 'd3-format';
+  import { max } from 'd3-array';
   import type { MotionOptions } from 'layerchart/utils/motion.svelte';
   import { prefersReducedMotion } from 'svelte/motion';
   import { scalePoint } from 'd3-scale';
-  import { startOfDay, isAfter, isBefore, addDays } from 'date-fns';
   import { tickStep } from 'd3-array';
 
   import * as Card from '$lib/components/ui/card';
@@ -23,27 +23,17 @@
 
   const { draftCreatedAt, registrationClosedAt, startedAt, requestedAt, timelineData }: Props = $props();
 
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const endDate = new Date(startedAt ?? requestedAt)
 
-  const regClosedStr = $derived(registrationClosedAt.toISOString().split('T')[0]);
-  const [, rm, rd] = $derived(regClosedStr!.split('-'));
-  const regClosedLabel = `${monthNames[parseInt(rm!) - 1]} ${parseInt(rd!)}`
-  $inspect(regClosedLabel, registrationClosedAt)
+  const localCreatedAt = $derived(new Date(draftCreatedAt))
+  const localClosedAt = $derived(new Date(registrationClosedAt))
 
-  const endDate = startedAt ?? requestedAt
-
-  const startStr = $derived(endDate.toISOString().split('T')[0]);
-  const [sy, sm, sd] = $derived(startStr!.split('-'));
-  const startLabel = `${sd}/${sm}/${sy}`
+  const regClosedLabel = localClosedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
 
   const allDaysData = $derived.by(() => {
-    const start = startOfDay(draftCreatedAt);
+    const start = startOfDay(localCreatedAt);
     const lastDate = startOfDay(endDate);
-    $inspect("start", start, draftCreatedAt)
-    $inspect("last", lastDate)
-    $inspect("startedAt", startedAt)
-    $inspect("req", requestedAt)
     const result: { date: Date; label: string; count: number }[] = [];
     
     const currentDate = new Date(start);
@@ -51,26 +41,20 @@
     const sortedData = [...timelineData].sort((a, b) => a.date.getTime() - b.date.getTime());
     
     while (!isAfter(currentDate, lastDate)) {
-      const currentStr = currentDate.toISOString().split('T')[0];
-      const [, month, day] = currentStr!.split('-');
-      const dayData = sortedData.find(d => 
-        d.date.toISOString().split('T')[0] === currentStr
-      );
+      const currentStr = currentDate.toDateString();
+      const dayData = sortedData.find(d => d.date.toDateString() === currentStr);
       
       result.push({
           date: new Date(currentDate),
-          label: `${monthNames[parseInt(month!) - 1]} ${parseInt(day!)}`,
+          label: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
           count: dayData?.count ?? 0,
       });
       
       currentDate.setDate(currentDate.getDate() + 1);
-      $inspect("curr", currentDate)
     }
     
     return result;
   });
-
-  $inspect(allDaysData)
 
   const yMax = $derived(max(timelineData, d => d.count) ?? 1);
   const yTicks = $derived.by(() => {
@@ -129,9 +113,9 @@
       </div>
       <div class="text-sm text-muted-foreground">
         {#if startedAt}
-          Draft Started: {startLabel}
+          Draft Started: {endDate.toLocaleDateString()}
         {:else}
-          Current: {startLabel}
+          Current: {endDate.toLocaleDateString()}
         {/if}
       </div>
     </div>
@@ -158,8 +142,8 @@
         }}
       >
         {#snippet aboveMarks({ context })}
-          {@const xScale = context.xScale}
-          {@const yScale = context.yScale}
+          {@const {xScale} = context}
+          {@const {yScale} = context}
           {#if xScale && regClosedLabel}
             <line 
               x1={xScale(regClosedLabel)} 

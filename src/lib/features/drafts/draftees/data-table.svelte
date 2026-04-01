@@ -38,8 +38,8 @@
     columnHelper.accessor('id', {
       id: 'isLate',
       header: '',
-      cell: ({ row }) => {
-        const isLate = row.original.isLate;
+      cell({ row }) {
+        const {isLate} = row.original;
         return isLate ? renderComponent(TriangleAlertIcon, { class: 'size-4 text-amber-500 ml-2' }) : null;
       },
     }),

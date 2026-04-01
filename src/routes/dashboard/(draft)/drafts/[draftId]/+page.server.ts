@@ -2,47 +2,13 @@ import assert from 'node:assert/strict';
 
 import * as v from 'valibot';
 import { decode } from 'decode-formdata';
-import { sql } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import { repeat, roundrobin, zip } from 'itertools';
+import { sql } from 'drizzle-orm';
 
-import {
-  addToAllowlist,
-  autoAcknowledgeLabsWithoutPreferences,
-  beginDraftReview,
-  concludeDraft,
-  fetchDraftRegistrationTimeline,
-  getAllowlistCountByDraft,
-  getCurrentDatabaseTime,
-  getDraftAssignmentRecords,
-  getDraftById,
-  getDraftByIdForUpdate,
-  getDraftLabQuotaLabIds,
-  getDraftLabQuotaSnapshots,
-  getFacultyAndStaff,
-  getLabById,
-  getLateRegistrantsCountByDraft,
-  getPendingLabCountInDraft,
-  getStudentCountInDraft,
-  getUserByEmail,
-  getUserById,
-  incrementDraftRound,
-  insertLotteryChoices,
-  isRegisteredOrAssignedInDraft,
-  randomizeRemainingStudents,
-  removeFromAllowlist,
-  startDraft,
-  syncResultsToUsers,
-  updateDraftInitialLabQuotas,
-  updateDraftLotteryLabQuotas,
-} from '$lib/server/database/drizzle';
+import { addToAllowlist, autoAcknowledgeLabsWithoutPreferences, beginDraftReview, concludeDraft, fetchDraftRegistrationTimeline, getAllowlistCountByDraft, getCurrentDatabaseTime, getDraftAssignmentRecords, getDraftById, getDraftByIdForUpdate, getDraftLabQuotaLabIds, getDraftLabQuotaSnapshots, getFacultyAndStaff, getLabById, getLateRegistrantsCountByDraft, getPendingLabCountInDraft, getStudentCountInDraft, getUserByEmail, getUserById, incrementDraftRound, insertLotteryChoices, isRegisteredOrAssignedInDraft, randomizeRemainingStudents, removeFromAllowlist, startDraft, syncResultsToUsers, updateDraftInitialLabQuotas, updateDraftLotteryLabQuotas } from '$lib/server/database/drizzle';
 import { db } from '$lib/server/database';
-import {
-  DraftFinalizedBatchEmailEvent,
-  LotteryInterventionBatchEmailEvent,
-  RoundStartedBatchEmailEvent,
-  UserAssignedBatchEmailEvent,
-} from '$lib/server/inngest/schema';
+import { DraftFinalizedBatchEmailEvent, LotteryInterventionBatchEmailEvent, RoundStartedBatchEmailEvent, UserAssignedBatchEmailEvent } from '$lib/server/inngest/schema';
 import { inngest } from '$lib/server/inngest/client';
 import { Logger } from '$lib/server/telemetry/logger';
 import { Tracer } from '$lib/server/telemetry/tracer';
