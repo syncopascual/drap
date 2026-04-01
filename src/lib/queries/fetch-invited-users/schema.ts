@@ -1,10 +1,5 @@
 import * as v from 'valibot';
 
-export const FetchInvitedUsersParams = v.object({
-  type: v.union([v.literal('admins'), v.literal('heads')]),
-});
-export type FetchInvitedUsersParams = v.InferInput<typeof FetchInvitedUsersParams>;
-
 export const InvitedUser = v.object({
   id: v.string(),
   email: v.string(),

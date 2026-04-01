@@ -1,12 +1,9 @@
 import * as v from 'valibot';
 
-import { FetchInvitedUsersParams, FetchInvitedUsersResponse } from './schema';
+import { FetchInvitedUsersResponse } from './schema';
 
-export async function fetchInvitedUsers(params: FetchInvitedUsersParams) {
-  const parsed = v.parse(FetchInvitedUsersParams, params);
-  const searchParams = new URLSearchParams(parsed);
-
-  const response = await fetch(`/dashboard/api/users/invited?${searchParams.toString()}`);
+export async function fetchInvitedUsers(type: 'admins' | 'heads') {
+  const response = await fetch(`/dashboard/api/users/invited/${type}`);
   if (!response.ok) throw new Error('Failed to fetch invited users.');
 
   const json = await response.json();

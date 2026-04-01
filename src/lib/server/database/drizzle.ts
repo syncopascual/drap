@@ -469,8 +469,8 @@ export async function getFacultyAndStaff(db: DbConnection) {
   });
 }
 
-export async function getInvitedFacultyAndStaff(db: DbConnection) {
-  return await tracer.asyncSpan('get-invited-faculty-and-staff', async () => {
+export async function getInvitedAdmins(db: DbConnection) {
+  return await tracer.asyncSpan('get-invited-admins', async () => {
     return await db
       .select({
         id: schema.user.id,
@@ -484,7 +484,38 @@ export async function getInvitedFacultyAndStaff(db: DbConnection) {
       })
       .from(schema.user)
       .leftJoin(schema.lab, eq(schema.user.labId, schema.lab.id))
-      .where(and(eq(schema.user.isAdmin, true), isNull(schema.user.googleUserId)));
+      .where(
+        and(
+          eq(schema.user.isAdmin, true),
+          isNull(schema.user.googleUserId),
+          isNull(schema.user.labId),
+        ),
+      );
+  });
+}
+
+export async function getInvitedHeads(db: DbConnection) {
+  return await tracer.asyncSpan('get-invited-heads', async () => {
+    return await db
+      .select({
+        id: schema.user.id,
+        googleUserId: schema.user.googleUserId,
+        email: schema.user.email,
+        givenName: schema.user.givenName,
+        familyName: schema.user.familyName,
+        avatarUrl: schema.user.avatarUrl,
+        labId: schema.lab.id,
+        labName: schema.lab.name,
+      })
+      .from(schema.user)
+      .leftJoin(schema.lab, eq(schema.user.labId, schema.lab.id))
+      .where(
+        and(
+          eq(schema.user.isAdmin, true),
+          isNull(schema.user.googleUserId),
+          isNotNull(schema.user.labId),
+        ),
+      );
   });
 }
 
