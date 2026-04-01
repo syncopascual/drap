@@ -287,6 +287,7 @@ export const actions = {
             const data = await request.formData();
             const decoded = decode(data, {
               arrays: ['lotteryAssignments'],
+              booleans: ['isUpdate'],
               numbers: ['draftId', 'round'],
             });
 
