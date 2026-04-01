@@ -595,6 +595,7 @@ export async function getDrafts(db: DbConnection) {
         activePeriodEnd: sql`upper(${schema.draft.activePeriod})`
           .mapWith(coerceNullableDate)
           .as('_end'),
+        startedAt: schema.draft.startedAt,
       })
       .from(schema.draft)
       .orderBy(({ activePeriodStart }) => sql`${desc(activePeriodStart)} NULLS FIRST`);

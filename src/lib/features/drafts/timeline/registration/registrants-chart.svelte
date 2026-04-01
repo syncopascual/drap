@@ -24,14 +24,16 @@
   const { draftCreatedAt, registrationClosedAt, startedAt, requestedAt, timelineData }: Props =
     $props();
 
-  const endDate = new Date(startedAt ?? requestedAt);
+  const endDate = $derived(new Date(startedAt ?? requestedAt));
 
   const localClosedAt = $derived(new Date(registrationClosedAt));
 
-  const regClosedLabel = localClosedAt.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
+  const regClosedLabel = $derived(
+    localClosedAt.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    }),
+  );
 
   const allDaysData = $derived.by(() => {
     const start = startOfDay(draftCreatedAt);

@@ -22,7 +22,7 @@
   import SortByHeader from './sort-by-header.svelte';
 
   interface ExtendedStudent extends Student {
-    isLate: boolean;
+    isLate?: boolean;
   }
 
   interface Props {
