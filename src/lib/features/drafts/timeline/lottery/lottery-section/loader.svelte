@@ -49,12 +49,10 @@
       return async ({ update, result }) => {
         submitter.disabled = false;
         await update();
-        if (result.type === 'success') {
-          toast.success('Successfully applied the interventions.');
-          await queryClient.invalidateQueries({
-            queryKey: ['drafts', draftId],
-          });
-        }
+        await queryClient.invalidateQueries({
+          queryKey: ['drafts', draftId],
+        });
+        if (result.type === 'success') toast.success('Successfully applied the interventions.');
       };
     }}
   >

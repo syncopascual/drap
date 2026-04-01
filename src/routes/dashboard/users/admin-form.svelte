@@ -1,4 +1,4 @@
-<script lang="ts">
+<script>
   import SendIcon from '@lucide/svelte/icons/send';
   import { toast } from 'svelte-sonner';
   // eslint-disable-next-line no-restricted-imports
@@ -24,9 +24,9 @@
     return async ({ update, result }) => {
       submitter.disabled = false;
       await update();
+      await queryClient.invalidateQueries({ queryKey: ['users', 'invited', 'admins'] });
       switch (result.type) {
         case 'success':
-          await queryClient.invalidateQueries({ queryKey: ['users', 'invited', 'admins'] });
           toast.success('Successfully invited a new draft administrator.');
           break;
         case 'failure':

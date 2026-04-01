@@ -32,9 +32,9 @@
     return async ({ update, result }) => {
       submitter.disabled = false;
       await update();
+      await queryClient.invalidateQueries({ queryKey: ['users', 'invited', 'heads'] });
       switch (result.type) {
         case 'success':
-          await queryClient.invalidateQueries({ queryKey: ['users', 'invited', 'heads'] });
           toast.success('Successfully invited a new laboratory head.');
           break;
         case 'failure':

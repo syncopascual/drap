@@ -69,11 +69,10 @@
         return async ({ result, update }) => {
           submitter.disabled = false;
           await update();
-
+          await queryClient.invalidateQueries({ queryKey: ['users', 'invited'] });
           switch (result.type) {
             case 'success':
               toast.success('Invitation deleted.');
-              await queryClient.invalidateQueries({ queryKey: ['users', 'invited'] });
               break;
             case 'failure':
               toast.error('Failed to delete invitation.');

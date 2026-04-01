@@ -29,12 +29,10 @@
     return async ({ update, result }) => {
       submitter.disabled = false;
       await update();
+      await queryClient.invalidateQueries({ queryKey: ['drafts', draftId] });
       switch (result.type) {
         case 'success':
           toast.success('Draft started.');
-          await queryClient.invalidateQueries({
-            queryKey: ['drafts', draftId],
-          });
           break;
         case 'failure':
           switch (result.status) {
