@@ -4,7 +4,6 @@ import * as v from 'valibot';
 import { decode } from 'decode-formdata';
 import { error, fail } from '@sveltejs/kit';
 import { repeat, roundrobin, zip } from 'itertools';
-import { sql } from 'drizzle-orm';
 
 import { addToAllowlist, autoAcknowledgeLabsWithoutPreferences, beginDraftReview, concludeDraft, fetchDraftRegistrationTimeline, getAllowlistCountByDraft, getCurrentDatabaseTime, getDraftAssignmentRecords, getDraftById, getDraftByIdForUpdate, getDraftLabQuotaLabIds, getDraftLabQuotaSnapshots, getFacultyAndStaff, getLabById, getLateRegistrantsCountByDraft, getPendingLabCountInDraft, getStudentCountInDraft, getUserByEmail, getUserById, incrementDraftRound, insertLotteryChoices, isRegisteredOrAssignedInDraft, randomizeRemainingStudents, removeFromAllowlist, startDraft, syncResultsToUsers, updateDraftInitialLabQuotas, updateDraftLotteryLabQuotas } from '$lib/server/database/drizzle';
 import { db } from '$lib/server/database';

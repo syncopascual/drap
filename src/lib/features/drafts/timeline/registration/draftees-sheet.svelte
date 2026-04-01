@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { SvelteMap, } from 'svelte/reactivity';
+  import { SvelteMap } from 'svelte/reactivity';
+
   import * as Sheet from '$lib/components/ui/sheet';
   import DataTable from '$lib/features/drafts/draftees/data-table.svelte';
   import { Button } from '$lib/components/ui/button';
@@ -71,7 +72,7 @@
       />
       <Button 
         variant={showLateOnly ? 'secondary' : 'outline'}
-        onclick={() => showLateOnly = !showLateOnly}
+        onclick={() => { showLateOnly = !showLateOnly }}
       >
         Late Only
       </Button>

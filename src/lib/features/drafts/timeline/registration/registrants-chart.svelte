@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { isAfter, startOfDay } from 'date-fns';
   import { Area, AreaChart, LinearGradient } from 'layerchart';
   import { cubicOut } from 'svelte/easing';
   import { format } from 'd3-format';
-  import { max } from 'd3-array';
+  import { isAfter, startOfDay } from 'date-fns';
+  import { max, tickStep } from 'd3-array';
   import type { MotionOptions } from 'layerchart/utils/motion.svelte';
   import { prefersReducedMotion } from 'svelte/motion';
   import { scalePoint } from 'd3-scale';
-  import { tickStep } from 'd3-array';
+  import { SvelteDate } from 'svelte/reactivity';
 
   import * as Card from '$lib/components/ui/card';
   import * as Chart from '$lib/components/ui/chart';
@@ -25,18 +25,17 @@
 
   const endDate = new Date(startedAt ?? requestedAt)
 
-  const localCreatedAt = $derived(new Date(draftCreatedAt))
   const localClosedAt = $derived(new Date(registrationClosedAt))
 
   const regClosedLabel = localClosedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
 
   const allDaysData = $derived.by(() => {
-    const start = startOfDay(localCreatedAt);
+    const start = startOfDay(draftCreatedAt);
     const lastDate = startOfDay(endDate);
     const result: { date: Date; label: string; count: number }[] = [];
     
-    const currentDate = new Date(start);
+    const currentDate = new SvelteDate(start);
 
     const sortedData = [...timelineData].sort((a, b) => a.date.getTime() - b.date.getTime());
     
