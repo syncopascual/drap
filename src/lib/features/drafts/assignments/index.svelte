@@ -21,7 +21,7 @@
       <Sheet.Title>Draft Assignments</Sheet.Title>
     </Sheet.Header>
     {#if open}
-      <div class="overflow-auto px-8 pb-40">
+      <div class="overflow-y-auto p-4">
         <Loader {...loaderProps} />
       </div>
     {/if}

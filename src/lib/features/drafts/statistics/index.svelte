@@ -5,10 +5,9 @@
   import Loader, { type Props } from './loader.svelte';
 
   const loaderProps: Props = $props();
-  let open = $state(false);
 </script>
 
-<Drawer.Root bind:open>
+<Drawer.Root>
   <Drawer.Trigger>
     {#snippet child({ props })}
       <Button variant="outline" class="border-primary text-primary" {...props}>
@@ -17,10 +16,8 @@
     {/snippet}
   </Drawer.Trigger>
   <Drawer.Content class="min-h-screen">
-    {#if open}
-      <div class="overflow-auto px-8 pb-40">
-        <Loader {...loaderProps} />
-      </div>
-    {/if}
+    <div class="overflow-y-auto p-4">
+      <Loader {...loaderProps} />
+    </div>
   </Drawer.Content>
 </Drawer.Root>

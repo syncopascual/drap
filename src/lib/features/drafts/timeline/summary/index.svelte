@@ -42,13 +42,8 @@
       </Alert.Description>
     </Alert.Root>
   {/if}
-
-  <!-- Draft Summary Stats -->
   <DraftStatistics {draftId} maxRounds={draft.maxRounds} {totalStudents} {labs} {snapshots} />
-
-  <!-- Draft Assignments -->
   <DraftAssignments {draftId} maxRounds={draft.maxRounds} />
-
   <div class="flex flex-row gap-2 @max-[52rem]:grid @max-[52rem]:grid-cols-1">
     <Button
       href={resolve(`/dashboard/drafts/${draftId}/students.csv`)}

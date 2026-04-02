@@ -41,7 +41,7 @@
 <div class="mb-15 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
   <Card.Root>
     <Card.Header>
-      <Card.Title class="text-md font-semibold tabular-nums">Total students</Card.Title>
+      <Card.Title class="text-md font-semibold tabular-nums">Total Students</Card.Title>
       <Card.Title id="stat-total-students" class="text-4xl font-semibold tabular-nums">
         {totalStudents}
       </Card.Title>
@@ -49,11 +49,10 @@
     <Card.Footer class="flex-col items-start gap-1.5 text-sm">
       <div class="flex items-center gap-2 font-medium text-muted-foreground">
         <UsersIcon class="size-4 text-muted-foreground" />
-        All registered participants
+        All Registered Participants
       </div>
     </Card.Footer>
   </Card.Root>
-
   <Card.Root class="bg-linear-to-br from-muted/30 to-muted/10">
     <Card.Header>
       <Card.Title class="text-md font-semibold tabular-nums">Participating Labs</Card.Title>
@@ -62,7 +61,7 @@
       </Card.Title>
     </Card.Header>
     <Card.Footer class="flex-col items-start gap-1.5 text-sm">
-      <div class="text-muted-foreground">Active labs in draft</div>
+      <div class="text-muted-foreground">Active Labs in Draft</div>
     </Card.Footer>
   </Card.Root>
 
@@ -77,7 +76,6 @@
       <div class="text-muted-foreground">Regular draft rounds</div>
     </Card.Footer>
   </Card.Root>
-
   <Card.Root class="bg-linear-to-br from-muted/30 to-muted/10">
     <Card.Header>
       <Card.Title class="text-md font-semibold tabular-nums">Interventions</Card.Title>
@@ -89,7 +87,6 @@
       <div class="text-muted-foreground">Interventions Made</div>
     </Card.Footer>
   </Card.Root>
-
   <Card.Root class="bg-linear-to-br from-muted/30 to-muted/10">
     <Card.Header>
       <Card.Title class="text-md font-semibold tabular-nums">Lottery Assignments</Card.Title>
@@ -98,11 +95,10 @@
       </Card.Title>
     </Card.Header>
     <Card.Footer class="flex-col items-start gap-1.5 text-sm">
-      <div class="text-muted-foreground">Students chosen during lottery</div>
+      <div class="text-muted-foreground">Students Chosen During Lottery</div>
     </Card.Footer>
   </Card.Root>
 </div>
-
 <DraftRoundsChart
   records={regularDrafted}
   {maxRounds}

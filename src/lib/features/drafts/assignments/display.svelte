@@ -64,7 +64,7 @@
               class="h-fit border-secondary bg-secondary/10 px-2 py-1 text-xs"
             >
               {#if assignedAt === null}
-                <span id="intervention-date-{id}">Unknown date</span>
+                <span id="intervention-date-{id}">Unknown Date</span>
               {:else}
                 <time id="intervention-date-{id}" datetime={assignedAt.toISOString()}>
                   {format(assignedAt, 'PPP p')}
@@ -78,7 +78,6 @@
       {/each}
     </div>
   </div>
-
   <div id="section-lottery-drafted" class="mb-8">
     <h3 class="mb-4 text-2xl font-bold">Lottery Drafted ({lotteryDrafted.length})</h3>
     <div class="space-y-2">
