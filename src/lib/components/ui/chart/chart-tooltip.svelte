@@ -133,7 +133,7 @@
             {/if}
             <div
               class={cn(
-                'flex flex-1 shrink-0 justify-between leading-none',
+                'flex shrink-0 grow justify-between leading-none',
                 nestLabel ? 'items-end' : 'items-center',
               )}
             >

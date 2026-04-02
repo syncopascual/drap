@@ -28,12 +28,6 @@
 
   const { allowlist, draftId }: Props = $props();
   const queryClient = useQueryClient();
-
-  async function invalidateDraft() {
-    await queryClient.invalidateQueries({
-      queryKey: ['drafts', draftId],
-    });
-  }
 </script>
 
 <section class="space-y-4">
@@ -52,10 +46,10 @@
       return async ({ update, result }) => {
         submitter.disabled = false;
         await update();
+        await queryClient.invalidateQueries({ queryKey: ['drafts', draftId] });
         switch (result.type) {
           case 'success':
             toast.success('Student added to allowlist');
-            await invalidateDraft();
             break;
           case 'failure': {
             switch (result.data?.status) {
@@ -86,7 +80,7 @@
     }}
   >
     <div class="flex gap-2">
-      <div class="flex-1">
+      <div class="grow">
         <Label for="allowlist-email" class="sr-only">Student Email</Label>
         <Input
           type="email"
@@ -139,10 +133,10 @@
                     return async ({ update, result }) => {
                       submitter.disabled = false;
                       await update();
+                      await queryClient.invalidateQueries({ queryKey: ['drafts', draftId] });
                       switch (result.type) {
                         case 'success':
                           toast.success('Student removed from allowlist.');
-                          await invalidateDraft();
                           break;
                         default:
                           break;

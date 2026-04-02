@@ -1,6 +1,8 @@
 <script lang="ts">
   import SendIcon from '@lucide/svelte/icons/send';
   import { toast } from 'svelte-sonner';
+  // eslint-disable-next-line no-restricted-imports
+  import { useQueryClient } from '@tanstack/svelte-query';
 
   import * as NativeSelect from '$lib/components/ui/native-select';
   import { assert } from '$lib/assert';
@@ -16,6 +18,7 @@
   }
 
   const { labs }: Props = $props();
+  const queryClient = useQueryClient();
 </script>
 
 <form
@@ -29,6 +32,7 @@
     return async ({ update, result }) => {
       submitter.disabled = false;
       await update();
+      await queryClient.invalidateQueries({ queryKey: ['users', 'invited', 'heads'] });
       switch (result.type) {
         case 'success':
           toast.success('Successfully invited a new laboratory head.');
@@ -62,7 +66,7 @@
         name="email"
         id="faculty-email"
         placeholder="example@up.edu.ph"
-        class="flex-1 rounded-none border-0"
+        class="grow rounded-none border-0"
       />
       <Button type="submit" class="rounded-l-none">Invite</Button>
     </div>

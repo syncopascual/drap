@@ -35,7 +35,7 @@
           >
             1
           </div>
-          <div aria-hidden="true" class="w-1 flex-1 bg-muted"></div>
+          <div aria-hidden="true" class="w-1 grow bg-muted"></div>
         </div>
         <div class="pb-8">
           <h3 class="text-xl font-bold">Registration</h3>
@@ -53,7 +53,7 @@
           >
             2
           </div>
-          <div aria-hidden="true" class="w-1 flex-1 bg-muted"></div>
+          <div aria-hidden="true" class="w-1 grow bg-muted"></div>
         </div>
         <div class="pb-8">
           <h3 class="text-xl font-bold">Regular Draft</h3>
@@ -85,7 +85,7 @@
           >
             3
           </div>
-          <div aria-hidden="true" class="w-1 flex-1 bg-muted"></div>
+          <div aria-hidden="true" class="w-1 grow bg-muted"></div>
         </div>
         <div class="pb-8">
           <h3 class="text-xl font-bold">Lottery Round</h3>

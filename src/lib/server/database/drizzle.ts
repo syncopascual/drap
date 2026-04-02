@@ -457,7 +457,6 @@ export async function getFacultyAndStaff(db: DbConnection) {
     return await db
       .select({
         id: schema.user.id,
-        googleUserId: schema.user.googleUserId,
         email: schema.user.email,
         givenName: schema.user.givenName,
         familyName: schema.user.familyName,
@@ -466,8 +465,62 @@ export async function getFacultyAndStaff(db: DbConnection) {
       })
       .from(schema.user)
       .leftJoin(schema.lab, eq(schema.user.labId, schema.lab.id))
-      .where(eq(schema.user.isAdmin, true));
+      .where(and(eq(schema.user.isAdmin, true), isNotNull(schema.user.googleUserId)));
   });
+}
+
+export async function getInvitedAdmins(db: DbConnection) {
+  return await tracer.asyncSpan(
+    'get-invited-admins',
+    async () =>
+      await db
+        .select({
+          id: schema.user.id,
+          googleUserId: schema.user.googleUserId,
+          email: schema.user.email,
+          givenName: schema.user.givenName,
+          familyName: schema.user.familyName,
+          avatarUrl: schema.user.avatarUrl,
+          labId: schema.lab.id,
+          labName: schema.lab.name,
+        })
+        .from(schema.user)
+        .leftJoin(schema.lab, eq(schema.user.labId, schema.lab.id))
+        .where(
+          and(
+            eq(schema.user.isAdmin, true),
+            isNull(schema.user.googleUserId),
+            isNull(schema.user.labId),
+          ),
+        ),
+  );
+}
+
+export async function getInvitedHeads(db: DbConnection) {
+  return await tracer.asyncSpan(
+    'get-invited-heads',
+    async () =>
+      await db
+        .select({
+          id: schema.user.id,
+          googleUserId: schema.user.googleUserId,
+          email: schema.user.email,
+          givenName: schema.user.givenName,
+          familyName: schema.user.familyName,
+          avatarUrl: schema.user.avatarUrl,
+          labId: schema.lab.id,
+          labName: schema.lab.name,
+        })
+        .from(schema.user)
+        .leftJoin(schema.lab, eq(schema.user.labId, schema.lab.id))
+        .where(
+          and(
+            eq(schema.user.isAdmin, true),
+            isNull(schema.user.googleUserId),
+            isNotNull(schema.user.labId),
+          ),
+        ),
+  );
 }
 
 export async function getValidStaffEmails(db: DbConnection) {
@@ -1997,10 +2050,29 @@ export async function inviteNewFacultyOrStaff(
   });
 }
 
-/**
- * Synchronizes user objects with draft results by assigning student-users' lab fields to their
- * respective labs (as reflected by the faculty choices) for a given draft.
- */
+export async function deleteInvitation(db: DbConnection, id: string) {
+  return await tracer.asyncSpan('delete-invitation', async span => {
+    span.setAttribute('database.user.id', id);
+    const { rowCount } = await db
+      .delete(schema.user)
+      .where(
+        and(
+          eq(schema.user.id, id),
+          eq(schema.user.isAdmin, true),
+          isNull(schema.user.googleUserId),
+        ),
+      );
+    switch (rowCount) {
+      case 0:
+        return false;
+      case 1:
+        return true;
+      default:
+        fail(`deleteInvitation => unexpected deletion count ${rowCount}`);
+    }
+  });
+}
+
 export async function syncResultsToUsers(db: DbConnection, draftId: bigint) {
   return await tracer.asyncSpan('sync-results-to-users', async span => {
     span.setAttribute('database.draft.id', draftId.toString());

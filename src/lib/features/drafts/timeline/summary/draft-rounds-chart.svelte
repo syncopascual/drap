@@ -185,7 +185,7 @@
 >
   <Card.Header class="gap-5">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-      <div class="space-y-1.5 lg:flex-1">
+      <div class="space-y-1.5 lg:grow">
         <div class="flex flex-wrap items-center gap-2">
           <Card.Title id="draft-rounds-chart-title">{chartTitle} per phase</Card.Title>
           {#if typeof selectedLabName === 'string'}
