@@ -7,7 +7,6 @@ import { repeat, roundrobin, zip } from 'itertools';
 
 import {
   addToAllowlist,
-  aggregateDraftRegistrationTimelineByDay,
   autoAcknowledgeLabsWithoutPreferences,
   beginDraftReview,
   concludeDraft,
@@ -17,6 +16,7 @@ import {
   getDraftByIdForUpdate,
   getDraftLabQuotaLabIds,
   getDraftLabQuotaSnapshots,
+  getDraftRegistrationTimeline,
   getFacultyAndStaff,
   getLabById,
   getLateRegistrantsCountByDraft,
@@ -116,7 +116,7 @@ export async function load({ params, locals: { session } }) {
           getDraftLabQuotaSnapshots(db, draftId),
           getAllowlistCountByDraft(db, draftId),
           getLateRegistrantsCountByDraft(db, draftId),
-          aggregateDraftRegistrationTimelineByDay(db, draftId),
+          getDraftRegistrationTimeline(db, draftId),
         ]),
       { isolationLevel: 'repeatable read' },
     );

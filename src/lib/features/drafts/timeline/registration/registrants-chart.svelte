@@ -12,8 +12,7 @@
   import { Badge } from '$lib/components/ui/badge';
 
   interface TimelineData {
-    date: Date;
-    count: number;
+    createdAt: Date;
   }
 
   interface Props {
@@ -41,8 +40,8 @@
   const allDaysData = $derived.by(() => {
     const countByDay = rollup(
       timelineData,
-      values => values.reduce((total, { count }) => total + count, 0),
-      ({ date }) => startOfDay(date).getTime(),
+      values => values.length,
+      ({ createdAt }) => startOfDay(createdAt).getTime(),
     );
     return eachDayOfInterval({ start: chartStart, end: chartEnd }).map(date => ({
       date,

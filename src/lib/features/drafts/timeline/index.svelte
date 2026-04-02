@@ -25,8 +25,7 @@
     | 'finalized';
 
   interface TimelineData {
-    date: Date;
-    count: number;
+    createdAt: Date;
   }
 
   interface Props {

@@ -2365,17 +2365,13 @@ export async function getLateRegistrantsCountByDraft(db: DbConnection, draftId: 
   });
 }
 
-export async function aggregateDraftRegistrationTimelineByDay(db: DbConnection, draftId: bigint) {
-  return await tracer.asyncSpan('aggregate-draft-registration-timeline-by-day', async span => {
-    span.setAttribute('database.draft.id', draftId.toString());
-    return await db
-      .select({
-        date: sql`date_trunc('day', ${schema.studentRank.createdAt})`.mapWith(coerceDate),
-        count: count(),
-      })
-      .from(schema.studentRank)
-      .where(eq(schema.studentRank.draftId, draftId))
-      .groupBy(({ date }) => date)
-      .orderBy(({ date }) => date);
+export async function getDraftRegistrationTimeline(db: DbConnection, id: bigint) {
+  return await tracer.asyncSpan('get-draft-registration-timeline', async span => {
+    span.setAttribute('database.draft.id', id.toString());
+    return await db.query.studentRank.findMany({
+      columns: { createdAt: true },
+      where: ({ draftId }, { eq }) => eq(draftId, id),
+      orderBy: ({ createdAt }) => createdAt,
+    });
   });
 }

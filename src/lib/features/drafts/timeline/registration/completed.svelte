@@ -4,8 +4,7 @@
   import DrafteesSheet from './draftees-sheet/index.svelte';
 
   interface TimelineData {
-    date: Date;
-    count: number;
+    createdAt: Date;
   }
 
   interface Props {
