@@ -103,7 +103,7 @@
             <TableHead>Submitted At</TableHead>
             <TableHead>Added By</TableHead>
             <TableHead>Added At</TableHead>
-            <TableHead class="w-10"></TableHead>
+            <TableHead class="w-10" data-hover="off" />
           </TableRow>
         </TableHeader>
         <TableBody>

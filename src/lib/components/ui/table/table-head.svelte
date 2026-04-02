@@ -15,7 +15,7 @@
   bind:this={ref}
   data-slot="table-head"
   class={cn(
-    'h-10 bg-clip-padding px-2 text-start align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pe-0',
+    'h-10 bg-clip-padding px-2 text-start align-middle font-medium whitespace-nowrap text-foreground transition-colors hover:bg-muted/30 data-[hover=off]:hover:bg-transparent [&:has([role=checkbox])]:pe-0',
     className,
   )}
   {...restProps}

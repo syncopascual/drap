@@ -19,13 +19,17 @@
   <DropdownMenu.Trigger>
     <button
       type="button"
-      class="inline-flex items-center gap-1 rounded-sm p-0 text-inherit transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-100"
+      class={cn(
+        'inline-flex items-center gap-1 rounded-sm p-0 text-inherit transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-100',
+        { 'cursor-pointer': options.length > 0 },
+      )}
       disabled={options.length === 0}
     >
       <span>{header}</span>
       <span
         class={cn(
-          'flex w-4 items-center justify-center text-muted-foreground',
+          'flex w-4 items-center justify-center',
+          !filtered && 'text-muted-foreground',
           filtered && 'text-secondary',
         )}
       >

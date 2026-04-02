@@ -104,14 +104,13 @@ Needs to distinguish the following events (one 'event' being a grouping of choic
   <table class="w-full">
     <thead class="text-left">
       <tr class="border-b">
-        <th class="px-4 py-2 whitespace-nowrap">Timestamp</th>
-        <th class="px-4 py-2 whitespace-nowrap">Round</th>
-        <th class="px-4 py-2 whitespace-nowrap">Lab ID</th>
-        <th class="px-4 py-2 whitespace-nowrap">Action</th>
-        <th class="px-4 py-2 whitespace-nowrap">Actor</th>
+        <th class="px-4 py-2 whitespace-nowrap transition-colors hover:bg-muted/30">Timestamp</th>
+        <th class="px-4 py-2 whitespace-nowrap transition-colors hover:bg-muted/30">Round</th>
+        <th class="px-4 py-2 whitespace-nowrap transition-colors hover:bg-muted/30">Lab ID</th>
+        <th class="px-4 py-2 whitespace-nowrap transition-colors hover:bg-muted/30">Action</th>
+        <th class="px-4 py-2 whitespace-nowrap transition-colors hover:bg-muted/30">Actor</th>
       </tr>
     </thead>
-
     <tbody>
       {#each events as event (event.key)}
         {#each event.labs as lab (lab.key)}

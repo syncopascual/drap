@@ -24,7 +24,7 @@
       <Table.Row>
         <Table.Head class="w-full">Laboratory</Table.Head>
         <Table.Head class="w-0 text-right">Archived Date</Table.Head>
-        <Table.Head class="w-0 text-right">Restore?</Table.Head>
+        <Table.Head class="w-0 text-right" data-hover="off">Restore?</Table.Head>
       </Table.Row>
     </Table.Header>
     <Table.Body>

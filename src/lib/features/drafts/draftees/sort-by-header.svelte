@@ -17,7 +17,7 @@
 <button
   type="button"
   class={cn(
-    'inline-flex items-center gap-1 rounded-sm p-0 text-inherit transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none',
+    'inline-flex cursor-pointer items-center gap-1 rounded-sm p-0 text-inherit transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none',
     className,
   )}
   {...restProps}

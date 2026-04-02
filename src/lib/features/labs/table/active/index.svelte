@@ -22,7 +22,7 @@
       <Table.Header>
         <Table.Row>
           <Table.Head class="w-full">Laboratory</Table.Head>
-          <Table.Head class="w-0 text-right">Archive?</Table.Head>
+          <Table.Head class="w-0 text-right" data-hover="off">Archive?</Table.Head>
         </Table.Row>
       </Table.Header>
       <Table.Body>
