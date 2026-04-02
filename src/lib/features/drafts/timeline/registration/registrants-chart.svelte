@@ -50,7 +50,11 @@
     }));
   });
 
-  const yMax = $derived(max(allDaysData, ({ count }) => count) ?? 1);
+  const yMax = $derived.by(() => {
+    const value = max(allDaysData, ({ count }) => count);
+    return typeof value === 'undefined' || value === 0 ? 1 : value;
+  });
+
   const yTicks = $derived.by(() => {
     const step = Math.max(1, tickStep(0, yMax, 4));
     const ticks = Array.from({ length: Math.floor(yMax / step) + 1 }, (_, index) => index * step);
