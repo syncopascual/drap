@@ -1952,6 +1952,10 @@ test.describe('Draft Lifecycle', () => {
 
       test('show intervention assignment dates', async ({ adminPage }) => {
         await adminPage.goto('/dashboard/drafts/1/');
+
+        await adminPage.getByRole('button', { name: 'See Drafted Students by Method' }).click();
+        await adminPage.waitForLoadState('networkidle');
+
         const firstInterventionDate = adminPage.locator('[id^="intervention-date-"]').first();
         await expect(firstInterventionDate).toBeVisible();
         const interventionDateText = (await firstInterventionDate.textContent())?.trim() ?? '';
