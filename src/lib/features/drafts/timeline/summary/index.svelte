@@ -4,8 +4,12 @@
 
   import * as Alert from '$lib/components/ui/alert';
   import DraftAssignments from '$lib/features/drafts/assignments/index.svelte';
-  import DraftStatistics from '$lib/features/drafts/statistics/index.svelte';
-  import type { Draft, DraftLabQuotaSnapshot, Lab } from '$lib/features/drafts/types';
+  import type {
+    Draft,
+    DraftAssignmentCountByAttribute,
+    DraftLabQuotaSnapshot,
+    Lab,
+  } from '$lib/features/drafts/types';
 
   interface Props {
     draftId: string;
@@ -14,9 +18,18 @@
     labs: Lab[];
     snapshots: DraftLabQuotaSnapshot[];
     isReview: boolean;
+    assignmentCountsByAttribute: DraftAssignmentCountByAttribute[];
   }
 
-  const { draftId, draft, totalStudents, labs, snapshots, isReview }: Props = $props();
+  const {
+    draftId,
+    draft,
+    totalStudents,
+    labs,
+    snapshots,
+    isReview,
+    assignmentCountsByAttribute,
+  }: Props = $props();
 </script>
 
 <div class="@container space-y-4">

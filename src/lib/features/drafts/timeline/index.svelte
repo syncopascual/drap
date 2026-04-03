@@ -3,7 +3,12 @@
   import { format, lightFormat } from 'date-fns';
 
   import { Button } from '$lib/components/ui/button';
-  import type { Draft, DraftLabQuotaSnapshot, Lab } from '$lib/features/drafts/types';
+  import type {
+    Draft,
+    DraftAssignmentCountByAttribute,
+    DraftLabQuotaSnapshot,
+    Lab,
+  } from '$lib/features/drafts/types';
   import { resolve } from '$app/paths';
 
   import Step, { type Status } from './step.svelte';
@@ -38,6 +43,7 @@
     allowlistCount: number;
     lateRegistrantsCount: number;
     timelineData: TimelineData[];
+    assignmentCountsByAttribute: DraftAssignmentCountByAttribute[];
   }
 
   const {
@@ -50,6 +56,7 @@
     allowlistCount,
     lateRegistrantsCount,
     timelineData,
+    assignmentCountsByAttribute,
   }: Props = $props();
   const draftId = $derived(rawDraftId.toString());
 
@@ -190,6 +197,7 @@
           {labs}
           {snapshots}
           isReview={currentPhase === 'review'}
+          {assignmentCountsByAttribute}
         />
       </Step>
     {/if}
