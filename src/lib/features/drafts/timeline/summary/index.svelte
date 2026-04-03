@@ -91,7 +91,6 @@
         <div class="text-muted-foreground">Active Labs in Draft</div>
       </Card.Footer>
     </Card.Root>
-
     <Card.Root class="bg-linear-to-br from-muted/30 to-muted/10">
       <Card.Header>
         <Card.Title class="text-md font-semibold tabular-nums">Max Rounds</Card.Title>

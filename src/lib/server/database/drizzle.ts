@@ -1945,7 +1945,7 @@ export async function getDraftAssignmentCountsByAttribute(db: DbConnection, draf
       })
       .from(schema.facultyChoiceUser)
       .where(eq(schema.facultyChoiceUser.draftId, draftId))
-      .groupBy(schema.facultyChoiceUser.labId, schema.facultyChoiceUser.round);
+      .groupBy(({ labId, round }) => [labId, round]);
   });
 }
 
