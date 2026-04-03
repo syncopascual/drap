@@ -18,7 +18,7 @@
 
   import * as Card from '$lib/components/ui/card';
 
-  import DraftRoundsChart from './draft-rounds-chart.svelte';
+  import DraftRoundsChart from '$lib/features/drafts/timeline/summary/draft-rounds-chart.svelte';
 
   interface Props extends ExternalProps {
     regularDrafted: DraftAssignmentRecord[];
