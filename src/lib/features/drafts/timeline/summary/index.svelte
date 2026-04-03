@@ -1,8 +1,10 @@
 <script lang="ts">
   import CheckCircle2Icon from '@lucide/svelte/icons/check-circle-2';
   import SparklesIcon from '@lucide/svelte/icons/sparkles';
+  import UsersIcon from '@lucide/svelte/icons/users';
 
   import * as Alert from '$lib/components/ui/alert';
+  import * as Card from '$lib/components/ui/card';
   import DraftAssignments from '$lib/features/drafts/assignments/index.svelte';
   import type {
     Draft,
@@ -10,6 +12,8 @@
     DraftLabQuotaSnapshot,
     Lab,
   } from '$lib/features/drafts/types';
+
+  import DraftRoundsChart from './draft-rounds-chart.svelte';
 
   interface Props {
     draftId: string;
@@ -30,6 +34,17 @@
     isReview,
     assignmentCountsByAttribute,
   }: Props = $props();
+  const participatingLabs = $derived(snapshots.length > 0 ? snapshots.length : labs.length);
+  const interventionDraftedCount = $derived(
+    assignmentCountsByAttribute
+      .filter(({ round }) => round !== null && round === draft.maxRounds + 1)
+      .reduce((acc, record) => acc + record.count, 0),
+  );
+  const lotteryDraftedCount = $derived(
+    assignmentCountsByAttribute
+      .filter(({ round }) => round === null)
+      .reduce((acc, record) => acc + record.count, 0),
+  );
 </script>
 
 <div class="@container space-y-4">
@@ -50,6 +65,72 @@
       </Alert.Description>
     </Alert.Root>
   {/if}
-  <DraftStatistics {draftId} maxRounds={draft.maxRounds} {totalStudents} {labs} {snapshots} />
+  <div class="mb-15 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+    <Card.Root>
+      <Card.Header>
+        <Card.Title class="text-md font-semibold tabular-nums">Total Students</Card.Title>
+        <Card.Title id="stat-total-students" class="text-4xl font-semibold tabular-nums">
+          {totalStudents}
+        </Card.Title>
+      </Card.Header>
+      <Card.Footer class="flex-col items-start gap-1.5 text-sm">
+        <div class="flex items-center gap-2 font-medium text-muted-foreground">
+          <UsersIcon class="size-4 text-muted-foreground" />
+          All Registered Participants
+        </div>
+      </Card.Footer>
+    </Card.Root>
+    <Card.Root class="bg-linear-to-br from-muted/30 to-muted/10">
+      <Card.Header>
+        <Card.Title class="text-md font-semibold tabular-nums">Participating Labs</Card.Title>
+        <Card.Title id="stat-participating-labs" class="text-4xl font-semibold tabular-nums">
+          {participatingLabs}
+        </Card.Title>
+      </Card.Header>
+      <Card.Footer class="flex-col items-start gap-1.5 text-sm">
+        <div class="text-muted-foreground">Active Labs in Draft</div>
+      </Card.Footer>
+    </Card.Root>
+
+    <Card.Root class="bg-linear-to-br from-muted/30 to-muted/10">
+      <Card.Header>
+        <Card.Title class="text-md font-semibold tabular-nums">Max Rounds</Card.Title>
+        <Card.Title id="stat-max-rounds" class="text-4xl font-semibold tabular-nums">
+          {draft.maxRounds}
+        </Card.Title>
+      </Card.Header>
+      <Card.Footer class="flex-col items-start gap-1.5 text-sm">
+        <div class="text-muted-foreground">Regular draft rounds</div>
+      </Card.Footer>
+    </Card.Root>
+    <Card.Root class="bg-linear-to-br from-muted/30 to-muted/10">
+      <Card.Header>
+        <Card.Title class="text-md font-semibold tabular-nums">Interventions</Card.Title>
+        <Card.Title id="quota-interventions" class="text-4xl font-semibold tabular-nums">
+          {interventionDraftedCount}
+        </Card.Title>
+      </Card.Header>
+      <Card.Footer class="flex-col items-start gap-1.5 text-sm">
+        <div class="text-muted-foreground">Interventions Made</div>
+      </Card.Footer>
+    </Card.Root>
+    <Card.Root class="bg-linear-to-br from-muted/30 to-muted/10">
+      <Card.Header>
+        <Card.Title class="text-md font-semibold tabular-nums">Lottery Assignments</Card.Title>
+        <Card.Title id="stat-lottery-assignments" class="text-4xl font-semibold tabular-nums">
+          {lotteryDraftedCount}
+        </Card.Title>
+      </Card.Header>
+      <Card.Footer class="flex-col items-start gap-1.5 text-sm">
+        <div class="text-muted-foreground">Students Chosen During Lottery</div>
+      </Card.Footer>
+    </Card.Root>
+  </div>
+  <DraftRoundsChart
+    {assignmentCountsByAttribute}
+    maxRounds={draft.maxRounds}
+    {labs}
+    {totalStudents}
+  />
   <DraftAssignments {draftId} maxRounds={draft.maxRounds} />
 </div>
