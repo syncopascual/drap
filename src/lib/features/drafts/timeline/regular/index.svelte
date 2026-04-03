@@ -4,6 +4,8 @@
   import PaperclipIcon from '@lucide/svelte/icons/paperclip';
 
   import * as Tabs from '$lib/components/ui/tabs';
+  import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+  import { Button } from '$lib/components/ui/button';
   import AvailableDraftees from '$lib/features/drafts/draftees/available/index.svelte';
   import DraftedDraftees from '$lib/features/drafts/draftees/drafted/index.svelte';
   import SystemLogsLoader from '$lib/features/drafts/system-logs/loader.svelte';
@@ -23,6 +25,7 @@
   const { draftId, requestedAt, round, labs }: Props = $props();
 
   let group: TabType = $state('students');
+  let selectedView = $state<'pending' | 'drafted'>('pending');
 </script>
 
 <Tabs.Root
@@ -48,12 +51,39 @@
     </Tabs.List>
   </div>
   <Tabs.Content value="students">
-    <div class="flex flex-col items-center justify-around gap-2 sm:flex-row">
+    <div class="mb-2">
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger>
+          {#snippet child({ props })}
+            <Button
+              {...props}
+              variant="outline"
+              class="bg-background hover:bg-accent dark:bg-input dark:hover:bg-input/80"
+            >
+              {selectedView === 'pending'
+                ? 'Pending Selection'
+                : 'Already Drafted'}
+            </Button>
+          {/snippet}
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content align="start">
+          <DropdownMenu.Item onclick={() => (selectedView = 'pending')}>
+            <span>Pending Selection</span>
+          </DropdownMenu.Item>
+          <DropdownMenu.Item onclick={() => (selectedView = 'drafted')}>
+            <span>Already Drafted</span>
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
+    </div>
+
+    {#if selectedView === 'pending'}
       <AvailableDraftees {draftId} variant="pending-selection"
         >No available draftees.</AvailableDraftees
       >
+    {:else if selectedView === 'drafted'}
       <DraftedDraftees {draftId}>No drafted students yet.</DraftedDraftees>
-    </div>
+    {/if}
   </Tabs.Content>
   <Tabs.Content value="labs" class="min-w-0 overflow-auto">
     {#each labs as lab (lab.id)}
