@@ -50,17 +50,39 @@ export interface DraftAssignmentRecord extends Pick<
   assignedAt: schema.FacultyChoice['createdAt'] | null;
 }
 
-export interface DraftFinalizedBreakdown {
-  quota: {
-    initialQuota: number;
-    lotteryInterventions: number;
-    finalizedQuota: number;
+export interface DraftAssignmentCountByAttribute {
+  labId: string;
+  round: number | null;
+  count: number;
+}
+
+export interface DraftAssignmentSummaryPhase {
+  key: string;
+  axisLabel: string;
+  tooltipLabel: string;
+}
+
+export interface DraftAssignmentSummarySeries {
+  capacity: number;
+  assignedByPhase: number[];
+  assignedMax: number;
+}
+
+export interface DraftAssignmentSummaryLab extends DraftAssignmentSummarySeries {
+  id: string;
+  name: string;
+}
+
+export interface DraftAssignmentSummary {
+  metrics: {
+    participatingLabCount: number;
+    interventionDraftedCount: number;
+    lotteryDraftedCount: number;
   };
-  snapshots: DraftLabQuotaSnapshot[];
-  sections: {
-    regularDrafted: DraftAssignmentRecord[];
-    interventionDrafted: DraftAssignmentRecord[];
-    lotteryDrafted: DraftAssignmentRecord[];
+  chart: {
+    phases: DraftAssignmentSummaryPhase[];
+    allLabs: DraftAssignmentSummarySeries;
+    labs: DraftAssignmentSummaryLab[];
   };
 }
 

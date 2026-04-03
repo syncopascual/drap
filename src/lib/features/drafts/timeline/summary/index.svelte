@@ -1,42 +1,24 @@
 <script lang="ts">
-  import ArrowUpFromLineIcon from '@lucide/svelte/icons/arrow-up-from-line';
   import CheckCircle2Icon from '@lucide/svelte/icons/check-circle-2';
-  import Loader2Icon from '@lucide/svelte/icons/loader-2';
   import SparklesIcon from '@lucide/svelte/icons/sparkles';
   import UsersIcon from '@lucide/svelte/icons/users';
-  import { format, lightFormat } from 'date-fns';
 
   import * as Alert from '$lib/components/ui/alert';
   import * as Card from '$lib/components/ui/card';
-  import StudentCard from '$lib/users/student.svelte';
-  import { Button } from '$lib/components/ui/button';
-  import { createFetchDrafteesQuery } from '$lib/queries/fetch-draftees';
-  import type { Draft, DraftFinalizedBreakdown, Lab } from '$lib/features/drafts/types';
-  import { Empty } from '$lib/components/ui/empty';
-  import { resolve } from '$app/paths';
+  import DraftAssignments from '$lib/features/drafts/assignments/index.svelte';
+  import type { Draft, DraftAssignmentSummary } from '$lib/features/drafts/types';
 
   import DraftRoundsChart from './draft-rounds-chart.svelte';
 
   interface Props {
     draftId: string;
-    requestedAt: Date;
     draft: Pick<Draft, 'activePeriodStart' | 'activePeriodEnd' | 'maxRounds'>;
     totalStudents: number;
-    labs: Lab[];
-    finalized: DraftFinalizedBreakdown;
+    assignmentSummary: DraftAssignmentSummary;
     isReview: boolean;
   }
 
-  const { draftId, requestedAt, draft, totalStudents, labs, finalized, isReview }: Props = $props();
-  const participatingLabs = $derived(
-    finalized.snapshots.length > 0 ? finalized.snapshots.length : labs.length,
-  );
-
-  const regularDraftedIds = $derived(
-    new Set(finalized.sections.regularDrafted.map(({ id }) => id)),
-  );
-
-  const query = $derived(createFetchDrafteesQuery(draftId));
+  const { draftId, draft, totalStudents, assignmentSummary, isReview }: Props = $props();
 </script>
 
 <div class="@container space-y-4">
@@ -57,12 +39,10 @@
       </Alert.Description>
     </Alert.Root>
   {/if}
-
-  <!-- Draft Summary Stats -->
-  <div class="grid grid-cols-1 gap-2 @[36rem]:grid-cols-2 @[58rem]:grid-cols-3">
+  <div class="mb-15 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
     <Card.Root>
       <Card.Header>
-        <Card.Title class="text-md font-semibold tabular-nums">Total students</Card.Title>
+        <Card.Title class="text-md font-semibold tabular-nums">Total Students</Card.Title>
         <Card.Title id="stat-total-students" class="text-4xl font-semibold tabular-nums">
           {totalStudents}
         </Card.Title>
@@ -70,23 +50,21 @@
       <Card.Footer class="flex-col items-start gap-1.5 text-sm">
         <div class="flex items-center gap-2 font-medium text-muted-foreground">
           <UsersIcon class="size-4 text-muted-foreground" />
-          All registered participants
+          All Registered Participants
         </div>
       </Card.Footer>
     </Card.Root>
-
     <Card.Root class="bg-linear-to-br from-muted/30 to-muted/10">
       <Card.Header>
         <Card.Title class="text-md font-semibold tabular-nums">Participating Labs</Card.Title>
         <Card.Title id="stat-participating-labs" class="text-4xl font-semibold tabular-nums">
-          {participatingLabs}
+          {assignmentSummary.metrics.participatingLabCount}
         </Card.Title>
       </Card.Header>
       <Card.Footer class="flex-col items-start gap-1.5 text-sm">
-        <div class="text-muted-foreground">Active labs in draft</div>
+        <div class="text-muted-foreground">Active Labs in Draft</div>
       </Card.Footer>
     </Card.Root>
-
     <Card.Root class="bg-linear-to-br from-muted/30 to-muted/10">
       <Card.Header>
         <Card.Title class="text-md font-semibold tabular-nums">Max Rounds</Card.Title>
@@ -102,7 +80,7 @@
       <Card.Header>
         <Card.Title class="text-md font-semibold tabular-nums">Interventions</Card.Title>
         <Card.Title id="quota-interventions" class="text-4xl font-semibold tabular-nums">
-          {finalized.quota.lotteryInterventions}
+          {assignmentSummary.metrics.interventionDraftedCount}
         </Card.Title>
       </Card.Header>
       <Card.Footer class="flex-col items-start gap-1.5 text-sm">
@@ -113,168 +91,14 @@
       <Card.Header>
         <Card.Title class="text-md font-semibold tabular-nums">Lottery Assignments</Card.Title>
         <Card.Title id="stat-lottery-assignments" class="text-4xl font-semibold tabular-nums">
-          {finalized.sections.lotteryDrafted.length}
+          {assignmentSummary.metrics.lotteryDraftedCount}
         </Card.Title>
       </Card.Header>
       <Card.Footer class="flex-col items-start gap-1.5 text-sm">
-        <div class="text-muted-foreground">Students chosen during lottery</div>
+        <div class="text-muted-foreground">Students Chosen During Lottery</div>
       </Card.Footer>
     </Card.Root>
   </div>
-
-  <DraftRoundsChart
-    records={finalized.sections.regularDrafted}
-    maxRounds={draft.maxRounds}
-    interventionRecords={finalized.sections.interventionDrafted}
-    lotteryRecords={finalized.sections.lotteryDrafted}
-    {labs}
-    {totalStudents}
-  />
-
-  <div class="grid grid-cols-1 gap-2">
-    <Card.Root
-      id="section-regular-drafted"
-      variant="soft"
-      class="bg-linear-to-br from-muted/30 to-muted/10"
-    >
-      <Card.Header>
-        <Card.Title>Regular Drafted ({finalized.sections.regularDrafted.length})</Card.Title>
-      </Card.Header>
-      <Card.Content class="space-y-2">
-        {#if finalized.sections.regularDrafted.length > 0}
-          {#each finalized.sections.regularDrafted as { id, labId, labName, round, ...student } (id)}
-            <div class="space-y-1">
-              <StudentCard user={{ ...student, labs: [], labId }} />
-              <p class="px-1 text-sm text-muted-foreground">
-                Assigned to <strong>{labName}</strong> in round {round}.
-              </p>
-            </div>
-          {/each}
-        {:else}
-          <p class="text-sm text-muted-foreground">No regular-round assignments recorded.</p>
-        {/if}
-      </Card.Content>
-    </Card.Root>
-
-    <Card.Root
-      id="section-intervention-drafted"
-      variant="soft"
-      class="bg-linear-to-br from-muted/30 to-muted/10"
-    >
-      <Card.Header>
-        <Card.Title
-          >Intervention Drafted ({finalized.sections.interventionDrafted.length})</Card.Title
-        >
-      </Card.Header>
-      <Card.Content class="space-y-2">
-        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2">
-          {#if query.isPending}
-            <div class="flex h-full items-center justify-center">
-              <Loader2Icon class="size-20 animate-spin" />
-            </div>
-          {:else if query.isError}
-            <Empty>Uh oh! An error has occurred.</Empty>
-          {:else}
-            {@const undraftedAfterRegular = query.data.filter(
-              ({ id }) => !regularDraftedIds.has(id),
-            )}
-            <div id="section-undrafted-after-regular" class="space-y-2">
-              <p class="text-sm font-medium">
-                Undrafted After Regular ({undraftedAfterRegular.length})
-              </p>
-              {#if undraftedAfterRegular.length > 0}
-                {#each undraftedAfterRegular as { id, ...student } (id)}
-                  <StudentCard user={{ ...student, labs: [], labId: null }} />
-                {/each}
-              {:else}
-                <p class="text-sm text-muted-foreground">
-                  All students were drafted during regular rounds.
-                </p>
-              {/if}
-            </div>
-          {/if}
-
-          <div id="section-intervention-assignments" class="space-y-2">
-            <p class="text-sm font-medium">
-              Intervention Assignments ({finalized.sections.interventionDrafted.length})
-            </p>
-            {#if finalized.sections.interventionDrafted.length > 0}
-              {#each finalized.sections.interventionDrafted as { id, labId, labName, assignedAt, ...student } (id)}
-                <div class="space-y-1">
-                  <StudentCard user={{ ...student, labs: [], labId }} />
-                  <p class="px-1 text-sm text-muted-foreground">
-                    Intervention assignment to <strong>{labName}</strong> on
-                    {#if assignedAt !== null}
-                      <time id="intervention-date-{id}" datetime={assignedAt.toISOString()}>
-                        {format(assignedAt, 'PPP p')}
-                      </time>
-                    {:else}
-                      <span id="intervention-date-{id}">Unknown date</span>
-                    {/if}
-                    .
-                  </p>
-                </div>
-              {/each}
-            {:else}
-              <p class="text-sm text-muted-foreground">No intervention assignments were made.</p>
-            {/if}
-          </div>
-        </div>
-      </Card.Content>
-    </Card.Root>
-
-    <Card.Root
-      id="section-lottery-drafted"
-      variant="soft"
-      class="bg-linear-to-br from-muted/30 to-muted/10"
-    >
-      <Card.Header>
-        <Card.Title>Lottery Drafted ({finalized.sections.lotteryDrafted.length})</Card.Title>
-      </Card.Header>
-      <Card.Content class="space-y-2">
-        {#if finalized.sections.lotteryDrafted.length > 0}
-          {#each finalized.sections.lotteryDrafted as { id, labId, labName, ...student } (id)}
-            <div class="space-y-1">
-              <StudentCard user={{ ...student, labs: [], labId }} />
-              <p class="px-1 text-sm text-muted-foreground">
-                Assigned by finalized lottery results to <strong>{labName}</strong>.
-              </p>
-            </div>
-          {/each}
-        {:else}
-          <p class="text-sm text-muted-foreground">No lottery assignments were recorded.</p>
-        {/if}
-      </Card.Content>
-    </Card.Root>
-  </div>
-
-  <div class="flex flex-row gap-2 @max-[52rem]:grid @max-[52rem]:grid-cols-1">
-    <Button
-      href={resolve(`/dashboard/drafts/${draftId}/students.csv`)}
-      download="{lightFormat(requestedAt, 'yyyy-MM-dd')}_{draftId}_students.csv"
-      variant="outline"
-      class="@max-[52rem]:h-auto @max-[52rem]:min-h-9 @max-[52rem]:justify-start @max-[52rem]:py-1.5 @max-[52rem]:whitespace-normal"
-    >
-      <ArrowUpFromLineIcon class="size-5" />
-      <span>Export Student Ranks</span>
-    </Button>
-    <Button
-      href={resolve(`/dashboard/drafts/${draftId}/results.csv`)}
-      download="{lightFormat(requestedAt, 'yyyy-MM-dd')}_{draftId}_results.csv"
-      variant="outline"
-      class="@max-[52rem]:h-auto @max-[52rem]:min-h-9 @max-[52rem]:justify-start @max-[52rem]:py-1.5 @max-[52rem]:whitespace-normal"
-    >
-      <ArrowUpFromLineIcon class="size-5" />
-      <span>Export Final Results</span>
-    </Button>
-    <Button
-      href={resolve(`/dashboard/drafts/${draftId}/system-logs.csv`)}
-      download="{lightFormat(requestedAt, 'yyyy-MM-dd')}_{draftId}_system-logs.csv"
-      variant="outline"
-      class="@max-[52rem]:h-auto @max-[52rem]:min-h-9 @max-[52rem]:justify-start @max-[52rem]:py-1.5 @max-[52rem]:whitespace-normal"
-    >
-      <ArrowUpFromLineIcon class="size-5" />
-      <span>Export System Logs</span>
-    </Button>
-  </div>
+  <DraftRoundsChart chart={assignmentSummary.chart} />
+  <DraftAssignments {draftId} maxRounds={draft.maxRounds} />
 </div>

@@ -1,10 +1,10 @@
 <script lang="ts" module>
-  import type { DraftFinalizedBreakdown } from '$lib/features/drafts/types';
+  import type { DraftLabQuotaSnapshot } from '$lib/features/drafts/types';
 
   export interface Props {
     draftId: string;
     mode: 'initial' | 'lottery';
-    snapshots: DraftFinalizedBreakdown['snapshots'];
+    snapshots: DraftLabQuotaSnapshot[];
   }
 </script>
 

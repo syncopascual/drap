@@ -2,23 +2,23 @@ import * as devalue from 'devalue';
 import { error } from '@sveltejs/kit';
 
 import { db } from '$lib/server/database';
-import { getStudentsInDraftTaggedByLab } from '$lib/server/database/drizzle';
+import { getDraftAssignmentRecords } from '$lib/server/database/drizzle';
 import { Logger } from '$lib/server/telemetry/logger';
 import { Tracer } from '$lib/server/telemetry/tracer';
 
-const SERVICE_NAME = 'routes.dashboard.admin.drafts.draftees';
+const SERVICE_NAME = 'routes.dashboard.admin.drafts.assignments';
 const logger = Logger.byName(SERVICE_NAME);
 const tracer = Tracer.byName(SERVICE_NAME);
 
 export async function GET({ params, locals: { session } }) {
   if (typeof session?.user === 'undefined') {
-    logger.fatal('attempt to fetch draftee list without session');
+    logger.fatal('attempt to fetch draft assignments without session');
     error(401);
   }
 
   const { user } = session;
   if (!user.isAdmin || user.googleUserId === null || user.labId !== null) {
-    logger.fatal('insufficient permissions to fetch draftee list', void 0, {
+    logger.fatal('insufficient permissions to fetch draft assignments', void 0, {
       'user.is_admin': user.isAdmin,
       'user.google_id': user.googleUserId,
       'user.lab_id': user.labId,
@@ -31,7 +31,7 @@ export async function GET({ params, locals: { session } }) {
     user: { id: userId },
   } = session;
 
-  return await tracer.asyncSpan('fetch-draftee-list', async span => {
+  return await tracer.asyncSpan('fetch-draft-assignments', async span => {
     span.setAttributes({
       'session.id': sessionId,
       'session.user.id': userId,
@@ -39,14 +39,14 @@ export async function GET({ params, locals: { session } }) {
     });
 
     const draftId = BigInt(params.draftId);
-    const draftees = await getStudentsInDraftTaggedByLab(db, draftId);
+    const assignments = await getDraftAssignmentRecords(db, draftId);
 
-    logger.debug('draftees fetched', {
+    logger.debug('draft assignments fetched', {
       'draft.id': draftId.toString(),
-      'draftees.count': draftees.length,
+      'drafted_students.count': assignments.length,
     });
 
-    return new Response(devalue.stringify(draftees), {
+    return new Response(devalue.stringify(assignments), {
       headers: { 'Content-Type': 'application/json' },
     });
   });

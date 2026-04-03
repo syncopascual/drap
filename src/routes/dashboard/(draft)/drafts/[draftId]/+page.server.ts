@@ -11,6 +11,7 @@ import {
   beginDraftReview,
   concludeDraft,
   getAllowlistCountByDraft,
+  getDraftAssignmentCountsByAttribute,
   getDraftAssignmentRecords,
   getDraftById,
   getDraftByIdForUpdate,
@@ -44,6 +45,8 @@ import {
 import { inngest } from '$lib/server/inngest/client';
 import { Logger } from '$lib/server/telemetry/logger';
 import { Tracer } from '$lib/server/telemetry/tracer';
+
+import { buildDraftAssignmentSummary } from './assignment-summary.server';
 
 const enum AllowlistAddResult {
   NotAStudent = -3,
@@ -103,20 +106,20 @@ export async function load({ params, locals: { session } }) {
 
     const {
       studentCount,
-      assignments,
       quotaSnapshots,
       allowlistCount,
       lateRegistrantsCount,
       timelineData,
+      assignmentCountsByAttribute,
     } = await db.transaction(
       // Needs to be done sequentially because parallel queries in a transaction are not supported.
       async db => ({
         studentCount: await getStudentCountInDraft(db, draftId),
-        assignments: await getDraftAssignmentRecords(db, draftId),
         quotaSnapshots: await getDraftLabQuotaSnapshots(db, draftId),
         allowlistCount: await getAllowlistCountByDraft(db, draftId),
         lateRegistrantsCount: await getLateRegistrantsCountByDraft(db, draftId),
         timelineData: await getDraftRegistrationTimeline(db, draftId),
+        assignmentCountsByAttribute: await getDraftAssignmentCountsByAttribute(db, draftId),
       }),
       { isolationLevel: 'repeatable read' },
     );
@@ -127,32 +130,17 @@ export async function load({ params, locals: { session } }) {
       quota: initialQuota,
     }));
 
-    type DraftAssignmentRecords = typeof assignments;
-    const regularDrafted: DraftAssignmentRecords = [];
-    const interventionDrafted: DraftAssignmentRecords = [];
-    const lotteryDrafted: DraftAssignmentRecords = [];
-
-    for (const assignment of assignments)
-      if (assignment.round === null) lotteryDrafted.push(assignment);
-      else if (assignment.round > 0 && assignment.round <= draft.maxRounds)
-        regularDrafted.push(assignment);
-      else if (assignment.round === draft.maxRounds + 1) interventionDrafted.push(assignment);
-
-    let initialQuota = 0;
-    let finalizedQuota = 0;
-    for (const quota of quotaSnapshots) {
-      initialQuota += quota.initialQuota;
-      finalizedQuota += quota.initialQuota + quota.lotteryQuota;
-    }
-
     logger.debug('draft detail loaded', {
       'draft.id': draftId.toString(),
       'draft.round.current': draft.currRound,
       'draft.round.max': draft.maxRounds,
-      'draft.summary.regular_count': regularDrafted.length,
-      'draft.summary.intervention_count': interventionDrafted.length,
-      'draft.summary.lottery_count': lotteryDrafted.length,
     });
+    const assignmentSummary = buildDraftAssignmentSummary(
+      assignmentCountsByAttribute,
+      labs,
+      draft.maxRounds,
+      studentCount,
+    );
 
     return {
       draftId,
@@ -160,22 +148,11 @@ export async function load({ params, locals: { session } }) {
       requestedAt: new Date(),
       labs,
       studentCount,
-      finalized: {
-        quota: {
-          initialQuota,
-          lotteryInterventions: interventionDrafted.length,
-          finalizedQuota,
-        },
-        snapshots: quotaSnapshots.map(row => ({
-          ...row,
-          finalizedQuota: row.initialQuota + row.lotteryQuota,
-        })),
-        sections: {
-          regularDrafted,
-          interventionDrafted,
-          lotteryDrafted,
-        },
-      },
+      snapshots: quotaSnapshots.map(row => ({
+        ...row,
+        finalizedQuota: row.initialQuota + row.lotteryQuota,
+      })),
+      assignmentSummary,
       allowlistCount,
       lateRegistrantsCount,
       timelineData,

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { AreaChart } from 'layerchart';
   import { cubicOut } from 'svelte/easing';
-  import { cumsum, max, rollup, tickStep } from 'd3-array';
+  import { cumsum, tickStep } from 'd3-array';
   import { format } from 'd3-format';
   import type { MotionOptions } from 'layerchart/utils/motion.svelte';
   import { prefersReducedMotion } from 'svelte/motion';
@@ -11,109 +11,47 @@
   import * as Chart from '$lib/components/ui/chart';
   import * as NativeSelect from '$lib/components/ui/native-select';
   import { Badge } from '$lib/components/ui/badge';
-  import type { DraftAssignmentRecord, Lab } from '$lib/features/drafts/types';
+  import type { DraftAssignmentSummary } from '$lib/features/drafts/types';
 
   interface Props {
-    records: DraftAssignmentRecord[];
-    maxRounds: number;
-    interventionRecords?: DraftAssignmentRecord[];
-    lotteryRecords?: DraftAssignmentRecord[];
-    labs: Lab[];
-    totalStudents: number;
+    chart: DraftAssignmentSummary['chart'];
   }
 
-  const {
-    records,
-    maxRounds,
-    interventionRecords = [],
-    lotteryRecords = [],
-    labs,
-    totalStudents,
-  }: Props = $props();
+  const { chart }: Props = $props();
 
   let chartMode = $state<'assigned' | 'remaining'>('assigned');
   let selectedLabId = $state('');
 
-  const filtered = $derived(
-    selectedLabId === ''
-      ? {
-          records,
-          interventionRecords,
-          lotteryRecords,
-          selectedLabQuota: void 0,
-        }
-      : {
-          records: records.filter(record => record.labId === selectedLabId),
-          interventionRecords: interventionRecords.filter(record => record.labId === selectedLabId),
-          lotteryRecords: lotteryRecords.filter(record => record.labId === selectedLabId),
-          selectedLabQuota: labs.find(lab => lab.id === selectedLabId)?.quota,
-        },
-  );
+  const labById = $derived(new Map(chart.labs.map(lab => [lab.id, lab])));
+  const selectedLab = $derived.by(() => {
+    if (selectedLabId === '') return;
+    return labById.get(selectedLabId);
+  });
 
-  const capacity = $derived(
-    selectedLabId === '' || typeof filtered.selectedLabQuota === 'undefined'
-      ? totalStudents
-      : filtered.selectedLabQuota,
-  );
-
-  const roundCountByNumber = $derived.by(() =>
-    rollup(
-      filtered.records.flatMap(record =>
-        typeof record.round === 'number' && record.round > 0 && record.round <= maxRounds
-          ? [record.round]
-          : [],
-      ),
-      values => values.length,
-      value => value,
-    ),
-  );
-
-  const phaseCounts = $derived.by(() => [
-    ...Array.from({ length: maxRounds }, (_, index) => {
-      const round = index + 1;
-      return {
-        phaseKey: `round-${round}`,
-        axisLabel: `R${round}`,
-        tooltipLabel: `Round ${round}`,
-        assigned: roundCountByNumber.get(round) ?? 0,
-      };
-    }),
-    {
-      phaseKey: 'interventions',
-      axisLabel: 'Interventions',
-      tooltipLabel: 'Interventions',
-      assigned: filtered.interventionRecords.length,
-    },
-    {
-      phaseKey: 'lottery',
-      axisLabel: 'Lottery',
-      tooltipLabel: 'Lottery',
-      assigned: filtered.lotteryRecords.length,
-    },
-  ]);
-
-  const cumulativeAssigned = $derived(Array.from(cumsum(phaseCounts, ({ assigned }) => assigned)));
-
+  const selectedSeries = $derived(selectedLab ?? chart.allLabs);
+  const cumulativeAssigned = $derived(Array.from(cumsum(selectedSeries.assignedByPhase)));
   const chartPoints = $derived.by(() =>
-    phaseCounts.map((point, index) => {
-      const remaining = Math.max(capacity - (cumulativeAssigned[index] ?? 0), 0);
+    chart.phases.map((phase, index) => {
+      const assigned = selectedSeries.assignedByPhase[index] ?? 0;
+      const remaining = Math.max(selectedSeries.capacity - (cumulativeAssigned[index] ?? 0), 0);
       return {
-        ...point,
+        ...phase,
+        assigned,
         remaining,
-        value: chartMode === 'assigned' ? point.assigned : remaining,
+        value: chartMode === 'assigned' ? assigned : remaining,
       };
     }),
   );
 
-  const assignedMax = $derived(max(phaseCounts, point => point.assigned) ?? 1);
-
-  const chartMax = $derived(chartMode === 'assigned' ? assignedMax : Math.max(capacity, 1));
+  const chartMax = $derived(
+    chartMode === 'assigned'
+      ? Math.max(selectedSeries.assignedMax, 1)
+      : Math.max(selectedSeries.capacity, 1),
+  );
 
   const axisLabelByTooltipLabel = $derived(
-    new Map(phaseCounts.map(({ tooltipLabel, axisLabel }) => [tooltipLabel, axisLabel])),
+    new Map(chart.phases.map(({ tooltipLabel, axisLabel }) => [tooltipLabel, axisLabel])),
   );
-
-  const integerFormat = format('d');
 
   const yTicks = $derived.by(() => {
     const step = Math.max(1, tickStep(0, chartMax, 4));
@@ -123,13 +61,6 @@
     );
     if (ticks.at(-1) === chartMax) return ticks;
     return [...ticks, chartMax];
-  });
-
-  const selectedLabName = $derived.by(() => {
-    // eslint-disable-next-line @typescript-eslint/init-declarations
-    let name: string | undefined;
-    if (selectedLabId !== '') name = labs.find(lab => lab.id === selectedLabId)?.name;
-    return name;
   });
 
   const chartTitle = $derived.by(() => {
@@ -143,21 +74,6 @@
     if (selectedLabId === '') return 'Not yet assigned';
     return 'Remaining quota';
   });
-
-  const chartConfig = $derived({
-    value: {
-      label: activeMetricLabel,
-      color: 'var(--primary)',
-    },
-  } satisfies Chart.ChartConfig);
-
-  const chartSeries = $derived([
-    {
-      key: 'value',
-      label: activeMetricLabel,
-      color: 'var(--color-value)',
-    },
-  ]);
 
   const { chartMotion, axisMotion } = $derived<{
     chartMotion: MotionOptions;
@@ -178,6 +94,8 @@
           },
         },
   );
+
+  const integerFormat = format('d');
 </script>
 
 <Card.Root
@@ -188,10 +106,10 @@
       <div class="space-y-1.5 lg:grow">
         <div class="flex flex-wrap items-center gap-2">
           <Card.Title id="draft-rounds-chart-title">{chartTitle} per phase</Card.Title>
-          {#if typeof selectedLabName === 'string'}
-            <Badge id="draft-rounds-chart-lab-badge" variant="secondary">{selectedLabName}</Badge>
-          {:else}
+          {#if typeof selectedLab === 'undefined'}
             <Badge id="draft-rounds-chart-lab-badge" variant="default">All Labs</Badge>
+          {:else}
+            <Badge id="draft-rounds-chart-lab-badge" variant="secondary">{selectedLab.name}</Badge>
           {/if}
         </div>
         <Card.Description>
@@ -213,22 +131,37 @@
           class="w-full bg-background/80 sm:w-auto"
         >
           <NativeSelect.Option value="">All Labs</NativeSelect.Option>
-          {#each labs as lab (lab.id)}
-            <NativeSelect.Option value={lab.id}>{lab.name}</NativeSelect.Option>
+          {#each chart.labs as { id, name } (id)}
+            <NativeSelect.Option value={id}>{name}</NativeSelect.Option>
           {/each}
         </NativeSelect.Root>
       </div>
     </div>
   </Card.Header>
   <Card.Content class="pt-0">
-    <Chart.Container id="draft-rounds-chart" config={chartConfig} class="min-h-[280px] w-full">
+    <Chart.Container
+      id="draft-rounds-chart"
+      config={{
+        value: {
+          label: activeMetricLabel,
+          color: 'var(--primary)',
+        },
+      }}
+      class="min-h-70 w-full"
+    >
       <AreaChart
         data={chartPoints}
         x="tooltipLabel"
         y="value"
         xScale={scalePoint().padding(0)}
         padding={{ top: 8, right: 10, bottom: 20, left: 20 }}
-        series={chartSeries}
+        series={[
+          {
+            key: 'value',
+            label: activeMetricLabel,
+            color: 'var(--color-value)',
+          },
+        ]}
         legend={false}
         points
         grid

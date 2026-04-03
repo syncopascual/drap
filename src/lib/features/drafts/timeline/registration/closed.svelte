@@ -4,7 +4,7 @@
   import * as Alert from '$lib/components/ui/alert';
   import QuotaSnapshotForm from '$lib/features/drafts/timeline/quota-snapshot-form.svelte';
   import RegisteredDraftees from '$lib/features/drafts/draftees/registered/index.svelte';
-  import type { DraftFinalizedBreakdown } from '$lib/features/drafts/types';
+  import type { DraftLabQuotaSnapshot } from '$lib/features/drafts/types';
 
   import StartForm from './start-form.svelte';
   import { AllowlistDialog } from './allowlist';
@@ -13,7 +13,7 @@
     draftId: string;
     studentCount: number;
     allowlistCount: number;
-    snapshots: DraftFinalizedBreakdown['snapshots'];
+    snapshots: DraftLabQuotaSnapshot[];
   }
 
   const { draftId, studentCount, allowlistCount, snapshots }: Props = $props();

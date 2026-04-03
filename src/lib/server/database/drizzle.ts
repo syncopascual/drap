@@ -1934,6 +1934,21 @@ export async function getDraftAssignmentRecords(db: DbConnection, draftId: bigin
   });
 }
 
+export async function getDraftAssignmentCountsByAttribute(db: DbConnection, draftId: bigint) {
+  return await tracer.asyncSpan('get-draft-assignment-counts-by-lab', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    return await db
+      .select({
+        labId: schema.facultyChoiceUser.labId,
+        round: schema.facultyChoiceUser.round,
+        count: count(schema.facultyChoiceUser.studentUserId),
+      })
+      .from(schema.facultyChoiceUser)
+      .where(eq(schema.facultyChoiceUser.draftId, draftId))
+      .groupBy(({ labId, round }) => [labId, round]);
+  });
+}
+
 export async function getStudentRanksExport(db: DbConnection, draftId: bigint) {
   return await tracer.asyncSpan('get-student-ranks-export', async span => {
     span.setAttribute('database.draft.id', draftId.toString());

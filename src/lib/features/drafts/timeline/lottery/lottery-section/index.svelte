@@ -2,14 +2,14 @@
   import * as Sheet from '$lib/components/ui/sheet';
   import QuotaSnapshotForm from '$lib/features/drafts/timeline/quota-snapshot-form.svelte';
   import { Button } from '$lib/components/ui/button';
-  import type { DraftFinalizedBreakdown, Lab } from '$lib/features/drafts/types';
+  import type { DraftLabQuotaSnapshot, Lab } from '$lib/features/drafts/types';
 
   import Loader from './loader.svelte';
 
   interface Props {
     draftId: string;
     labs: Pick<Lab, 'id' | 'name'>[];
-    snapshots: DraftFinalizedBreakdown['snapshots'];
+    snapshots: DraftLabQuotaSnapshot[];
   }
 
   const { draftId, labs, snapshots }: Props = $props();

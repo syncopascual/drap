@@ -1,6 +1,6 @@
 <script lang="ts">
   import DraftedDraftees from '$lib/features/drafts/draftees/drafted/index.svelte';
-  import type { DraftFinalizedBreakdown, Lab } from '$lib/features/drafts/types';
+  import type { DraftLabQuotaSnapshot, Lab } from '$lib/features/drafts/types';
 
   import ConcludeForm from './conclude-form.svelte';
 
@@ -9,7 +9,7 @@
   interface Props {
     draftId: string;
     labs: Pick<Lab, 'id' | 'name'>[];
-    snapshots: DraftFinalizedBreakdown['snapshots'];
+    snapshots: DraftLabQuotaSnapshot[];
   }
 
   const { draftId, labs, snapshots }: Props = $props();

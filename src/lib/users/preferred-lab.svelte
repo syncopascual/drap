@@ -10,7 +10,10 @@
 
 <div class="overflow-x-auto">
   {#each labs as lab (lab)}
-    <Badge variant="outline" class="mr-1 border-accent bg-accent/10 text-xs uppercase">
+    <Badge
+      variant="outline"
+      class="mr-1 h-fit border-accent bg-accent/10 px-2 py-1 text-xs uppercase"
+    >
       {lab}
     </Badge>
   {/each}
