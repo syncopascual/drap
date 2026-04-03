@@ -96,7 +96,9 @@
         <span class="text-sm text-muted-foreground"
           >Review students who have already been assigned.</span
         >
-        <DraftedLoader {draftId} />
+        <div class="flex min-h-0 grow flex-col overflow-y-auto px-4 pb-4">
+          <DraftedLoader {draftId} />
+        </div>
       {/if}
     {/if}
   </Tabs.Content>
