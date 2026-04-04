@@ -4,6 +4,7 @@
 
   import * as Card from '$lib/components/ui/card';
   import * as Chart from '$lib/components/ui/chart';
+  import { assert } from '$lib/assert';
   import type { DraftPreferenceAlignment } from '$lib/features/drafts/types';
 
   interface Props {
@@ -12,29 +13,35 @@
 
   const { data }: Props = $props();
 
-  const SLICE_COLORS: Record<string, string> = {
-    '1st Choice': 'var(--chart-1)',
-    '2nd Choice': 'var(--chart-2)',
-    '3rd Choice': 'var(--chart-3)',
-    '4th+ Choice': 'var(--chart-4)',
-    Unranked: 'var(--chart-5)',
-  };
+  const NOT_PREFERRED = 'Not Preferred';
+
+  const COLORS = [
+    'var(--chart-1)',
+    'var(--chart-2)',
+    'var(--chart-3)',
+    'var(--chart-4)',
+    'var(--chart-5)',
+  ] as const;
+
+  function sliceColor(label: string, i: number) {
+    if (label === NOT_PREFERRED) return 'var(--muted-foreground)';
+    const color = COLORS[i % COLORS.length];
+    assert(typeof color === 'string', 'chart color index out of bounds');
+    return color;
+  }
 
   const chartConfig = $derived(
     Object.fromEntries(
-      data.slices.map(({ label }) => [
-        label,
-        { label, color: SLICE_COLORS[label] ?? 'var(--muted)' },
-      ]),
+      data.slices.map(({ label }, i) => [label, { label, color: sliceColor(label, i) }]),
     ),
   );
 
   const chartData = $derived(
-    data.slices.map(({ label, count }) => ({
+    data.slices.map(({ label, count }, i) => ({
       key: label,
       label,
       value: count,
-      color: SLICE_COLORS[label] ?? 'var(--muted)',
+      color: sliceColor(label, i),
     })),
   );
 

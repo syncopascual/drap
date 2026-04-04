@@ -139,17 +139,19 @@ function buildLabDistribution(
   return entries;
 }
 
+const ORDINAL_SUFFIXES = ['th', 'st', 'nd', 'rd'] as const;
+
+function ordinalChoice(rank: number): string {
+  const mod100 = rank % 100;
+  // 11th, 12th, 13th are exceptions to the normal pattern
+  const suffix = mod100 >= 11 && mod100 <= 13 ? 'th' : (ORDINAL_SUFFIXES[rank % 10] ?? 'th');
+  return `${rank}${suffix} Choice`;
+}
+
 function buildPreferenceAlignment(
   rows: DraftPreferenceAlignmentRow[],
 ): DraftSummaryChartData['preferenceAlignment'] {
-  const buckets = new Map<string, number>([
-    ['1st Choice', 0],
-    ['2nd Choice', 0],
-    ['3rd Choice', 0],
-    ['4th+ Choice', 0],
-    ['Unranked', 0],
-  ]);
-
+  const buckets = new Map<number | null, number>();
   let bordaNumerator = 0;
   let totalAssigned = 0;
 
@@ -157,38 +159,28 @@ function buildPreferenceAlignment(
     totalAssigned += count;
 
     if (preferenceRank === null || totalRanked === null) {
-      buckets.set('Unranked', (buckets.get('Unranked') ?? 0) + count);
-      // Borda score = 0 for unranked
+      buckets.set(null, (buckets.get(null) ?? 0) + count);
       continue;
     }
 
     const rank = Number(preferenceRank);
     const n = totalRanked;
-
-    // Bucket the rank (index is 1-based)
-    switch (rank) {
-      case 1:
-        buckets.set('1st Choice', (buckets.get('1st Choice') ?? 0) + count);
-        break;
-      case 2:
-        buckets.set('2nd Choice', (buckets.get('2nd Choice') ?? 0) + count);
-        break;
-      case 3:
-        buckets.set('3rd Choice', (buckets.get('3rd Choice') ?? 0) + count);
-        break;
-      default:
-        buckets.set('4th+ Choice', (buckets.get('4th+ Choice') ?? 0) + count);
-        break;
-    }
+    buckets.set(rank, (buckets.get(rank) ?? 0) + count);
 
     // Borda alignment: (n - rank) / (n - 1) per student, times count (1-based index)
     if (n > 1) bordaNumerator += (count * (n - rank)) / (n - 1);
     else bordaNumerator += count; // single-lab ranking → perfect score
   }
 
-  const slices = Array.from(buckets.entries())
-    .filter(([, count]) => count > 0)
-    .map(([label, count]) => ({ label, count }));
+  // Ranked slices sorted ascending, "Not Preferred" appended last
+  const ranked = Array.from(buckets.entries())
+    .filter((entry): entry is [number, number] => entry[0] !== null && entry[1] > 0)
+    .sort(([a], [b]) => a - b);
+
+  const slices = ranked.map(([rank, count]) => ({ label: ordinalChoice(rank), count }));
+
+  const notPreferred = buckets.get(null) ?? 0;
+  if (notPreferred > 0) slices.push({ label: 'Not Preferred', count: notPreferred });
 
   return {
     slices,
