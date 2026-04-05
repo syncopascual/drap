@@ -57,7 +57,7 @@
     <Card.Description>Distribution of assignments across labs</Card.Description>
   </Card.Header>
   <Card.Content>
-    <Chart.Container config={chartConfig} class="max-h-70 w-full">
+    <Chart.Container id="lab-distribution-chart" config={chartConfig} class="max-h-70 w-full">
       <PieChart
         data={chartData}
         key="key"

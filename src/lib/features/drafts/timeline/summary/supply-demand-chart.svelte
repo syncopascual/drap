@@ -40,7 +40,7 @@
     </Card.Description>
   </Card.Header>
   <Card.Content>
-    <Chart.Container config={chartConfig} class="max-h-[500px] w-full">
+    <Chart.Container id="supply-demand-chart" config={chartConfig} class="max-h-[500px] w-full">
       <BarChart
         data={chartData}
         y="lab"

@@ -54,7 +54,11 @@
     <Card.Description>How well assignments match student preferences</Card.Description>
   </Card.Header>
   <Card.Content>
-    <Chart.Container config={chartConfig} class="relative max-h-70 w-full">
+    <Chart.Container
+      id="preference-alignment-chart"
+      config={chartConfig}
+      class="relative max-h-70 w-full"
+    >
       <PieChart
         data={chartData}
         key="key"

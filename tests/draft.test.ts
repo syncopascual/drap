@@ -1949,6 +1949,92 @@ test.describe('Draft Lifecycle', () => {
       });
     });
 
+    test.describe('Supply Demand Chart', () => {
+      test('renders with all lab IDs and series legend', async ({ adminPage }) => {
+        await adminPage.goto('/dashboard/drafts/1/');
+        const chart = adminPage.locator('#supply-demand-chart');
+        await expect(chart).toBeVisible();
+
+        // Y-axis: all 5 lab IDs
+        await expect(chart).toContainText('NDSL');
+        await expect(chart).toContainText('CSL');
+        await expect(chart).toContainText('SCL');
+        await expect(chart).toContainText('CVMIL');
+        await expect(chart).toContainText('ACL');
+
+        // Legend: 3 grouped series
+        const legendItems = chart.locator('.lc-legend-swatch-button');
+        await expect(legendItems).toHaveCount(3);
+        await expect(chart).toContainText('Supply');
+        await expect(chart).toContainText('Demand');
+        await expect(chart).toContainText('Actual');
+      });
+
+      test('x-axis displays percentage labels', async ({ adminPage }) => {
+        await adminPage.goto('/dashboard/drafts/1/');
+        const chart = adminPage.locator('#supply-demand-chart');
+        await expect(chart).toContainText('0%');
+      });
+    });
+
+    test.describe('Lab Distribution Chart', () => {
+      test('renders with all five lab IDs in legend', async ({ adminPage }) => {
+        await adminPage.goto('/dashboard/drafts/1/');
+        const chart = adminPage.locator('#lab-distribution-chart');
+        await expect(chart).toBeVisible();
+
+        // All 8 students assigned across exactly 5 labs
+        const legendItems = chart.locator('.lc-legend-swatch-button');
+        await expect(legendItems).toHaveCount(5);
+        await expect(chart).toContainText('NDSL');
+        await expect(chart).toContainText('CSL');
+        await expect(chart).toContainText('SCL');
+        await expect(chart).toContainText('CVMIL');
+        await expect(chart).toContainText('ACL');
+      });
+
+      test('has no Unassigned slice', async ({ adminPage }) => {
+        await adminPage.goto('/dashboard/drafts/1/');
+        const chart = adminPage.locator('#lab-distribution-chart');
+        await expect(chart.getByText('Unassigned')).toHaveCount(0);
+      });
+    });
+
+    test.describe('Preference Alignment Chart', () => {
+      test('legend contains all deterministic preference slices', async ({ adminPage }) => {
+        await adminPage.goto('/dashboard/drafts/1/');
+        const chart = adminPage.locator('#preference-alignment-chart');
+        await expect(chart).toBeVisible();
+
+        // Always present regardless of lottery outcome:
+        // 1st Choice: Eager→NDSL, Patient→CSL
+        // 2nd Choice: PartialToDrafted→CSL
+        // 3rd Choice: Unlucky→NDSL
+        // Not Preferred: NoRank + IdleBystander (0 prefs)
+        await expect(chart).toContainText('1st Choice');
+        await expect(chart).toContainText('2nd Choice');
+        await expect(chart).toContainText('3rd Choice');
+        await expect(chart).toContainText('Not Preferred');
+      });
+
+      test('displays a valid Borda Score in the center overlay', async ({ adminPage }) => {
+        await adminPage.goto('/dashboard/drafts/1/');
+        const chart = adminPage.locator('#preference-alignment-chart');
+
+        await expect(chart).toContainText('Borda Score');
+
+        // d3-format('.0%') renders as "42%" etc.
+        const scoreEl = chart.locator('.text-3xl');
+        await expect(scoreEl).toHaveText(/^\d+%$/u);
+
+        // Verify range 0–100%
+        const scoreText = (await scoreEl.textContent())?.trim() ?? '';
+        const numeric = parseInt(scoreText.replace('%', ''), 10);
+        expect(numeric).toBeGreaterThanOrEqual(0);
+        expect(numeric).toBeLessThanOrEqual(100);
+      });
+    });
+
     test.describe('drafted sections', () => {
       test('are ordered as regular then intervention then lottery', async ({ adminPage }) => {
         await adminPage.goto('/dashboard/drafts/1/');
