@@ -72,6 +72,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://o2:5080/api/default
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:?required}
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      DRAP_ASSERT_DOMAIN: up.edu.ph
     networks:
       - database
       - durability
