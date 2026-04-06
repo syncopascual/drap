@@ -81,7 +81,6 @@
       children={icon}
     />
   {/if}
-
   <Empty.Header class="empty:hidden">
     {#if typeof title !== 'undefined'}
       <Empty.Title class={emptyWrapperTitleVariants({ variant })} children={title} />
@@ -90,7 +89,6 @@
       <Empty.Description class={emptyWrapperDescVariants({ variant })} children={description} />
     {/if}
   </Empty.Header>
-
   {#if typeof children !== 'undefined'}
     <Empty.Content {children} />
   {/if}
