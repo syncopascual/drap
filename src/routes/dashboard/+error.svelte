@@ -8,7 +8,7 @@
   const { status, error } = $derived(page);
 </script>
 
-<main class="flex min-h-full items-center justify-center px-6 py-12">
+<main class="flex h-full items-center justify-center px-6 py-12">
   <Empty
     variant={status === 404 || status === 499 ? 'warning' : 'destructive'}
     class="w-full max-w-xl"

@@ -8,7 +8,7 @@
   const { status, error } = $derived(page);
 </script>
 
-<main class="flex min-h-screen items-center justify-center px-6 py-12">
+<main class="flex min-h-dvh items-center justify-center px-6 py-12">
   <Empty variant={status === 404 ? 'warning' : 'destructive'} class="w-full max-w-xl">
     {#snippet icon()}
       <TriangleAlertIcon class="size-5" />
