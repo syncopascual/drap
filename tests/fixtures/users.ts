@@ -1,11 +1,12 @@
+import { eq } from 'drizzle-orm';
 import { mergeTests, type Page } from '@playwright/test';
 
+import * as schema from '$lib/server/database/schema';
 import {
   type DrizzleDatabase,
   deleteValidSession,
   insertDummySession,
-  type TestUserOptions,
-  upsertTestUser,
+  upsertOpenIdUser,
 } from '$lib/server/database/drizzle';
 
 import { testDatabase } from './database';
@@ -14,10 +15,38 @@ import { testLabs } from './labs';
 // Student fixtures with behavior-based names for E2E testing
 // Each student has a specific role in the draft lifecycle tests
 
-async function createTestUser(database: DrizzleDatabase, options: TestUserOptions) {
-  return await database.transaction(async db => await upsertTestUser(db, options), {
-    isolationLevel: 'read committed',
-  });
+interface TestUserOptions {
+  email: string;
+  googleUserId: string;
+  givenName: string;
+  familyName: string;
+  avatarUrl?: string;
+  isAdmin: boolean;
+  labId: string | null;
+}
+
+async function createTestUser(
+  database: DrizzleDatabase,
+  { avatarUrl = '', ...options }: TestUserOptions,
+) {
+  return await database.transaction(
+    async db => {
+      const { id: userId } = await upsertOpenIdUser(
+        db,
+        options.email,
+        options.googleUserId,
+        options.givenName,
+        options.familyName,
+        avatarUrl,
+      );
+      await db
+        .update(schema.user)
+        .set({ isAdmin: options.isAdmin, labId: options.labId })
+        .where(eq(schema.user.id, userId));
+      return { id: userId };
+    },
+    { isolationLevel: 'read committed' },
+  );
 }
 
 const testEagerDraftee = testLabs.extend<

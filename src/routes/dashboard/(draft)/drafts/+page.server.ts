@@ -1,9 +1,18 @@
 import * as v from 'valibot';
 import { decode } from 'decode-formdata';
 import { error, redirect } from '@sveltejs/kit';
+import { isNull, sql } from 'drizzle-orm';
 
+import * as schema from '$lib/server/database/schema';
+import { assertSingle } from '$lib/server/assert';
+import { coerceDate } from '$lib/coerce';
 import { db } from '$lib/server/database';
-import { getDrafts, getLabRegistry, hasActiveDraft, initDraft } from '$lib/server/database/drizzle';
+import {
+  type DbConnection,
+  type DrizzleTransaction,
+  getDrafts,
+  getLabRegistry,
+} from '$lib/server/database/drizzle';
 import { Logger } from '$lib/server/telemetry/logger';
 import { Tracer } from '$lib/server/telemetry/tracer';
 
@@ -99,3 +108,46 @@ export const actions = {
     });
   },
 };
+
+async function hasActiveDraft(db: DbConnection) {
+  return await tracer.asyncSpan('has-active-draft', async () => {
+    const result = await db
+      .select({ one: sql.raw('1') })
+      .from(schema.draft)
+      .where(isNull(sql`upper(${schema.draft.activePeriod})`))
+      .limit(1)
+      .then(rows => rows[0]);
+    return typeof result !== 'undefined';
+  });
+}
+
+async function initDraft(db: DrizzleTransaction, maxRounds: number, registrationClosedAt: Date) {
+  return await tracer.asyncSpan('init-draft', async span => {
+    span.setAttribute('database.draft.max_rounds', maxRounds);
+
+    // Blocks further modifications to the lab catalog until the end of the transaction.
+    await db.execute(sql`lock table ${schema.lab} in share mode`);
+
+    const draft = await db
+      .insert(schema.draft)
+      .values({ maxRounds, registrationClosedAt })
+      .returning({
+        id: schema.draft.id,
+        activePeriodStart: sql`lower(${schema.draft.activePeriod})`.mapWith(coerceDate),
+      })
+      .then(assertSingle);
+
+    const labs = await db.select({ labId: schema.activeLabView.id }).from(schema.activeLabView);
+    if (labs.length > 0)
+      await db.insert(schema.draftLabQuota).values(
+        labs.map(
+          ({ labId }): Pick<schema.NewDraftLabQuota, 'draftId' | 'labId'> => ({
+            draftId: draft.id,
+            labId,
+          }),
+        ),
+      );
+
+    return draft;
+  });
+}

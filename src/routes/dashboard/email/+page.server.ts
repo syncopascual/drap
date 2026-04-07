@@ -1,14 +1,13 @@
+import { fail } from 'node:assert/strict';
+
 import * as v from 'valibot';
+import { and, eq, isNotNull, isNull } from 'drizzle-orm';
 import { decode } from 'decode-formdata';
 import { error, redirect } from '@sveltejs/kit';
 
+import * as schema from '$lib/server/database/schema';
 import { db } from '$lib/server/database';
-import {
-  deleteCandidateSender,
-  deleteDesignatedSender,
-  getCandidateSenders,
-  upsertDesignatedSender,
-} from '$lib/server/database/drizzle';
+import type { DbConnection } from '$lib/server/database/drizzle';
 import { Logger } from '$lib/server/telemetry/logger';
 import { Tracer } from '$lib/server/telemetry/tracer';
 
@@ -150,3 +149,81 @@ export const actions = {
     });
   },
 };
+
+async function getCandidateSenders(db: DbConnection) {
+  return await tracer.asyncSpan(
+    'get-candidate-senders',
+    async () =>
+      await db
+        .select({
+          id: schema.user.id,
+          email: schema.user.email,
+          givenName: schema.user.givenName,
+          familyName: schema.user.familyName,
+          avatarUrl: schema.user.avatarUrl,
+          isActive: isNotNull(schema.designatedSender.candidateSenderUserId).mapWith(Boolean),
+        })
+        .from(schema.candidateSender)
+        .innerJoin(schema.user, eq(schema.candidateSender.userId, schema.user.id))
+        .leftJoin(
+          schema.designatedSender,
+          eq(schema.candidateSender.userId, schema.designatedSender.candidateSenderUserId),
+        )
+        .where(
+          and(isNotNull(schema.user.id), eq(schema.user.isAdmin, true), isNull(schema.user.labId)),
+        )
+        .orderBy(schema.user.familyName),
+  );
+}
+
+async function deleteCandidateSender(db: DbConnection, userId: string) {
+  return await tracer.asyncSpan('delete-candidate-sender', async span => {
+    span.setAttribute('database.user.id', userId);
+    const { rowCount } = await db
+      .delete(schema.candidateSender)
+      .where(eq(schema.candidateSender.userId, userId));
+    switch (rowCount) {
+      case 0:
+        return false;
+      case 1:
+        return true;
+      default:
+        fail(`deleteCandidateSender => unexpected delete count ${rowCount}`);
+    }
+  });
+}
+
+async function deleteDesignatedSender(db: DbConnection, userId: string) {
+  return await tracer.asyncSpan('delete-designated-sender', async span => {
+    span.setAttribute('database.user.id', userId);
+    const { rowCount } = await db
+      .delete(schema.designatedSender)
+      .where(eq(schema.designatedSender.candidateSenderUserId, userId));
+    switch (rowCount) {
+      case 0:
+        return false;
+      case 1:
+        return true;
+      default:
+        fail(`deleteDesignatedSender => unexpected delete count ${rowCount}`);
+    }
+  });
+}
+
+async function upsertDesignatedSender(db: DbConnection, userId: string) {
+  return await tracer.asyncSpan('upsert-designated-sender', async span => {
+    span.setAttribute('database.user.id', userId);
+    const { rowCount } = await db
+      .insert(schema.designatedSender)
+      .values({ candidateSenderUserId: userId })
+      .onConflictDoNothing({ target: schema.designatedSender.candidateSenderUserId });
+    switch (rowCount) {
+      case 0:
+        return false;
+      case 1:
+        return true;
+      default:
+        fail(`upsertDesignatedSender => unexpected insertion count ${rowCount}`);
+    }
+  });
+}

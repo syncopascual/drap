@@ -1,18 +1,19 @@
 import * as v from 'valibot';
+import { and, asc, eq, isNotNull, lt, sql } from 'drizzle-orm';
 import { decode } from 'decode-formdata';
+import { enumerate, izip } from 'itertools';
 import { error, redirect } from '@sveltejs/kit';
 
+import * as schema from '$lib/server/database/schema';
+import { assertOptional } from '$lib/server/assert';
+import { coerceDate, coerceNullableDate } from '$lib/coerce';
 import { db } from '$lib/server/database';
 import {
+  type DbConnection,
+  type DrizzleTransaction,
   getActiveDraft,
-  getDraftByIdForShare,
   getDraftLabQuotaLabIds,
-  getDraftLabRegistry,
   getLabById,
-  getStudentRankings,
-  insertStudentRanking,
-  isUserInAllowlist,
-  type schema,
 } from '$lib/server/database/drizzle';
 import { Logger } from '$lib/server/telemetry/logger';
 import { Tracer } from '$lib/server/telemetry/tracer';
@@ -311,3 +312,120 @@ export const actions = {
     });
   },
 };
+
+const isRegistrationClosed = lt(schema.draft.registrationClosedAt, sql`now()`)
+  .mapWith(Boolean)
+  .as('is_registration_closed');
+
+const StudentRankingLabRemark = v.array(
+  v.object({ labId: v.string(), labName: v.string(), remark: v.string() }),
+);
+
+async function getDraftByIdForShare(db: DrizzleTransaction, id: bigint) {
+  return await tracer.asyncSpan('get-draft-by-id-for-share', async span => {
+    span.setAttribute('database.draft.id', id.toString());
+    return await db
+      .select({
+        currRound: schema.draft.currRound,
+        maxRounds: schema.draft.maxRounds,
+        registrationClosedAt: schema.draft.registrationClosedAt,
+        isRegistrationClosed,
+        activePeriodStart: sql`lower(${schema.draft.activePeriod})`.mapWith(coerceDate),
+        activePeriodEnd: sql`upper(${schema.draft.activePeriod})`.mapWith(coerceNullableDate),
+      })
+      .from(schema.draft)
+      .where(eq(schema.draft.id, id))
+      .for('share')
+      .then(assertOptional);
+  });
+}
+
+async function getDraftLabRegistry(db: DbConnection, draftId: bigint) {
+  return await tracer.asyncSpan('get-draft-lab-registry', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    return await db
+      .select({
+        id: schema.draftLabQuota.labId,
+        name: schema.lab.name,
+      })
+      .from(schema.draftLabQuota)
+      .innerJoin(schema.lab, eq(schema.draftLabQuota.labId, schema.lab.id))
+      .where(eq(schema.draftLabQuota.draftId, draftId))
+      .orderBy(asc(schema.lab.name));
+  });
+}
+
+async function insertStudentRanking(
+  db: DrizzleTransaction,
+  draftId: bigint,
+  userId: string,
+  labs: string[],
+  remarks: string[],
+) {
+  return await tracer.asyncSpan('insert-student-ranking', async span => {
+    span.setAttributes({ 'database.draft.id': draftId.toString(), 'database.user.id': userId });
+    await db
+      .insert(schema.studentRank)
+      .values({ draftId, userId })
+      .onConflictDoNothing({ target: [schema.studentRank.draftId, schema.studentRank.userId] });
+    for (const [index, [labId, remark]] of enumerate(izip(labs, remarks)))
+      await db
+        .insert(schema.studentRankLab)
+        .values({ draftId, userId, labId, index: BigInt(index + 1), remark });
+  });
+}
+
+async function getStudentRankings(db: DbConnection, draftId: bigint, userId: string) {
+  return await tracer.asyncSpan('get-student-rankings', async span => {
+    span.setAttributes({ 'database.draft.id': draftId.toString(), 'database.user.id': userId });
+    const sub = db
+      .select({
+        createdAt: schema.studentRank.createdAt,
+        index: schema.studentRankLab.index,
+        labId: schema.studentRankLab.labId,
+        remark: schema.studentRankLab.remark,
+      })
+      .from(schema.studentRank)
+      .leftJoin(
+        schema.studentRankLab,
+        and(
+          eq(schema.studentRank.draftId, schema.studentRankLab.draftId),
+          eq(schema.studentRank.userId, schema.studentRankLab.userId),
+        ),
+      )
+      .where(and(eq(schema.studentRank.draftId, draftId), eq(schema.studentRank.userId, userId)))
+      .as('_');
+    return await db
+      .select({
+        createdAt: sub.createdAt,
+        labRemarks:
+          sql`coalesce(jsonb_agg(jsonb_build_object('labId', ${sub.labId}, 'labName', ${schema.lab.name}, 'remark', ${sub.remark}) ORDER BY ${sub.index}) filter (where ${isNotNull(sub.labId)}), '[]'::jsonb)`.mapWith(
+            vals => v.parse(StudentRankingLabRemark, vals),
+          ),
+      })
+      .from(sub)
+      .leftJoin(schema.lab, eq(sub.labId, schema.lab.id))
+      .groupBy(sub.createdAt)
+      .then(assertOptional);
+  });
+}
+
+async function isUserInAllowlist(db: DbConnection, draftId: bigint, studentUserId: string) {
+  return await tracer.asyncSpan('is-user-in-allowlist', async span => {
+    span.setAttributes({
+      'database.draft.id': draftId.toString(),
+      'database.user.id': studentUserId,
+    });
+    const result = await db
+      .select({ studentUserId: schema.draftRegistrationAllowlist.studentUserId })
+      .from(schema.draftRegistrationAllowlist)
+      .where(
+        and(
+          eq(schema.draftRegistrationAllowlist.draftId, draftId),
+          eq(schema.draftRegistrationAllowlist.studentUserId, studentUserId),
+        ),
+      )
+      .then(assertOptional);
+    return typeof result !== 'undefined';
+  });
+}

@@ -1,42 +1,28 @@
 import assert from 'node:assert/strict';
 
 import * as v from 'valibot';
+import { and, asc, count, eq, isNull, lt, sql, sum } from 'drizzle-orm';
 import { decode } from 'decode-formdata';
 import { error, fail } from '@sveltejs/kit';
 import { repeat, roundrobin, zip } from 'itertools';
 
+import * as schema from '$lib/server/database/schema';
+import { assertDefined, assertOptional, assertSingle } from '$lib/server/assert';
 import {
-  addToAllowlist,
   autoAcknowledgeLabsWithoutPreferences,
-  beginDraftReview,
-  concludeDraft,
-  getAllowlistCountByDraft,
-  getDraftAssignmentCountsByAttribute,
+  type DbConnection,
+  type DrizzleTransaction,
   getDraftAssignmentRecords,
   getDraftById,
   getDraftByIdForUpdate,
   getDraftLabQuotaLabIds,
-  getDraftLabQuotaSnapshots,
-  getDraftPreferenceAlignment,
-  getDraftRegistrationTimeline,
   getFacultyAndStaff,
   getLabById,
-  getLabDemandBordaScores,
-  getLateRegistrantsCountByDraft,
   getPendingLabCountInDraft,
-  getStudentCountInDraft,
   getUserByEmail,
-  getUserById,
   incrementDraftRound,
-  insertLotteryChoices,
-  isRegisteredOrAssignedInDraft,
-  markDraftAsStarted,
-  randomizeRemainingStudents,
-  removeFromAllowlist,
-  syncResultsToUsers,
-  updateDraftInitialLabQuotas,
-  updateDraftLotteryLabQuotas,
 } from '$lib/server/database/drizzle';
+import { coerceDate, coerceNumber } from '$lib/coerce';
 import { db } from '$lib/server/database';
 import {
   DraftFinalizedBatchEmailEvent,
@@ -936,3 +922,470 @@ export const actions = {
     });
   },
 };
+
+async function getUserById(db: DbConnection, userId: string) {
+  return await tracer.asyncSpan('get-user-by-id', async span => {
+    span.setAttribute('database.user.id', userId);
+    return await db.query.user
+      .findFirst({
+        columns: { email: true, avatarUrl: true, givenName: true, familyName: true },
+        where: ({ id }, { eq }) => eq(id, userId),
+      })
+      .then(assertDefined);
+  });
+}
+
+async function getDraftLabQuotaSnapshots(db: DbConnection, draftId: bigint) {
+  return await tracer.asyncSpan('get-draft-lab-quota-snapshots', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    return await db
+      .select({
+        labId: schema.draftLabQuota.labId,
+        labName: schema.lab.name,
+        initialQuota: schema.draftLabQuota.initialQuota,
+        lotteryQuota: schema.draftLabQuota.lotteryQuota,
+      })
+      .from(schema.draftLabQuota)
+      .innerJoin(schema.lab, eq(schema.draftLabQuota.labId, schema.lab.id))
+      .where(eq(schema.draftLabQuota.draftId, draftId))
+      .orderBy(asc(schema.lab.name));
+  });
+}
+
+async function getStudentCountInDraft(db: DbConnection, id: bigint) {
+  return await tracer.asyncSpan('get-student-count-in-draft', async span => {
+    span.setAttribute('database.draft.id', id.toString());
+    const { result } = await db
+      .select({ result: count(schema.studentRank.userId) })
+      .from(schema.studentRank)
+      .where(eq(schema.studentRank.draftId, id))
+      .then(assertSingle);
+    return result;
+  });
+}
+
+async function updateDraftInitialLabQuotas(
+  db: DbConnection,
+  draftId: bigint,
+  quotas: Iterable<readonly [string, number]>,
+) {
+  return await tracer.asyncSpan('update-draft-initial-lab-quotas', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    const values = Array.from(
+      quotas,
+      ([labId, initialQuota]): Pick<
+        schema.NewDraftLabQuota,
+        'draftId' | 'labId' | 'initialQuota'
+      > => ({
+        draftId,
+        labId,
+        initialQuota,
+      }),
+    );
+    if (values.length === 0) return;
+
+    await db
+      .insert(schema.draftLabQuota)
+      .values(values)
+      .onConflictDoUpdate({
+        target: [schema.draftLabQuota.draftId, schema.draftLabQuota.labId],
+        set: {
+          initialQuota: sql`excluded.${sql.raw(schema.draftLabQuota.initialQuota.name)}`,
+          updatedAt: sql`now()`,
+        },
+      });
+  });
+}
+
+async function updateDraftLotteryLabQuotas(
+  db: DbConnection,
+  draftId: bigint,
+  quotas: Iterable<readonly [string, number]>,
+) {
+  return await tracer.asyncSpan('update-draft-lottery-lab-quotas', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    const values = Array.from(
+      quotas,
+      ([labId, lotteryQuota]): Pick<
+        schema.NewDraftLabQuota,
+        'draftId' | 'labId' | 'lotteryQuota'
+      > => ({
+        draftId,
+        labId,
+        lotteryQuota,
+      }),
+    );
+    if (values.length === 0) return;
+
+    await db
+      .insert(schema.draftLabQuota)
+      .values(values)
+      .onConflictDoUpdate({
+        target: [schema.draftLabQuota.draftId, schema.draftLabQuota.labId],
+        set: {
+          lotteryQuota: sql`excluded.${sql.raw(schema.draftLabQuota.lotteryQuota.name)}`,
+          updatedAt: sql`now()`,
+        },
+      });
+  });
+}
+
+async function markDraftAsStarted(db: DbConnection, draftId: bigint) {
+  return await tracer.asyncSpan('mark-draft-as-started', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    return await db
+      .update(schema.draft)
+      .set({ startedAt: sql`now()` })
+      .where(eq(schema.draft.id, draftId))
+      .returning({ startedAt: sql`${schema.draft.startedAt}`.mapWith(coerceDate) })
+      .then(assertSingle);
+  });
+}
+
+async function randomizeRemainingStudents(db: DbConnection, draftId: bigint) {
+  return await tracer.asyncSpan('randomize-remaining-students', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    const results = await db
+      .select({ userId: schema.studentRank.userId })
+      .from(schema.studentRank)
+      .leftJoin(
+        schema.facultyChoiceUser,
+        and(
+          eq(schema.studentRank.draftId, schema.facultyChoiceUser.draftId),
+          eq(schema.studentRank.userId, schema.facultyChoiceUser.studentUserId),
+        ),
+      )
+      .where(
+        and(
+          eq(schema.studentRank.draftId, draftId),
+          isNull(schema.facultyChoiceUser.studentUserId),
+        ),
+      )
+      .orderBy(sql`random()`);
+    return results.map(({ userId }) => userId);
+  });
+}
+
+async function concludeDraft(db: DbConnection, draftId: bigint) {
+  return await tracer.asyncSpan('conclude-draft', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    const { activePeriodEnd } = await db
+      .update(schema.draft)
+      .set({
+        activePeriod: sql`tstzrange(lower(${schema.draft.activePeriod}), coalesce(upper(${schema.draft.activePeriod}), now()), '[)')`,
+      })
+      .where(eq(schema.draft.id, draftId))
+      .returning({ activePeriodEnd: sql`upper(${schema.draft.activePeriod})`.mapWith(coerceDate) })
+      .then(assertSingle);
+    return activePeriodEnd;
+  });
+}
+
+async function beginDraftReview(db: DbConnection, draftId: bigint) {
+  return await tracer.asyncSpan('begin-draft-review', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    return await db
+      .update(schema.draft)
+      .set({ currRound: null })
+      .where(eq(schema.draft.id, draftId))
+      .returning({ maxRounds: schema.draft.maxRounds })
+      .then(assertOptional);
+  });
+}
+
+async function getAllowlistCountByDraft(db: DbConnection, draftId: bigint) {
+  return await tracer.asyncSpan('get-allowlist-count-by-draft', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    const { result } = await db
+      .select({ result: count(schema.draftRegistrationAllowlist.studentUserId) })
+      .from(schema.draftRegistrationAllowlist)
+      .where(eq(schema.draftRegistrationAllowlist.draftId, draftId))
+      .then(assertSingle);
+    return result;
+  });
+}
+
+async function addToAllowlist(
+  db: DrizzleTransaction,
+  draftId: bigint,
+  studentUserId: string,
+  adminUserId: string,
+) {
+  return await tracer.asyncSpan('add-to-allowlist', async span => {
+    span.setAttributes({
+      'database.draft.id': draftId.toString(),
+      'database.user.student_id': studentUserId,
+      'database.user.admin_id': adminUserId,
+    });
+    const result = await db
+      .insert(schema.draftRegistrationAllowlist)
+      .values({ draftId, studentUserId, adminUserId })
+      .onConflictDoNothing({
+        target: [
+          schema.draftRegistrationAllowlist.draftId,
+          schema.draftRegistrationAllowlist.studentUserId,
+        ],
+      });
+    assert(result.rowCount !== null);
+    logger.debug('added to allowlist', { rowCount: result.rowCount });
+    return result.rowCount;
+  });
+}
+
+async function removeFromAllowlist(db: DrizzleTransaction, draftId: bigint, studentUserId: string) {
+  return await tracer.asyncSpan('remove-from-allowlist', async span => {
+    span.setAttributes({
+      'database.draft.id': draftId.toString(),
+      'database.user.id': studentUserId,
+    });
+    return await db
+      .delete(schema.draftRegistrationAllowlist)
+      .where(
+        and(
+          eq(schema.draftRegistrationAllowlist.draftId, draftId),
+          eq(schema.draftRegistrationAllowlist.studentUserId, studentUserId),
+        ),
+      );
+  });
+}
+
+async function isRegisteredOrAssignedInDraft(
+  db: DrizzleTransaction,
+  draftId: bigint,
+  userId: string,
+) {
+  return await tracer.asyncSpan('is-registered-or-assigned-in-draft', async span => {
+    span.setAttributes({
+      'database.draft.id': draftId.toString(),
+      'database.user.id': userId,
+    });
+
+    const registeredResult = await db
+      .select({ userId: schema.studentRank.userId })
+      .from(schema.studentRank)
+      .innerJoin(schema.user, eq(schema.studentRank.userId, schema.user.id))
+      .where(and(eq(schema.studentRank.draftId, draftId), eq(schema.user.id, userId)))
+      .then(assertOptional);
+
+    if (typeof registeredResult !== 'undefined') {
+      logger.debug('registered', { 'student_rank.user_id': registeredResult.userId });
+      return true;
+    }
+
+    const assignedResult = await db
+      .select({ studentUserId: schema.facultyChoiceUser.studentUserId })
+      .from(schema.facultyChoiceUser)
+      .innerJoin(schema.user, eq(schema.facultyChoiceUser.studentUserId, schema.user.id))
+      .where(and(eq(schema.facultyChoiceUser.draftId, draftId), eq(schema.user.id, userId)))
+      .then(assertOptional);
+
+    if (typeof assignedResult !== 'undefined') {
+      logger.debug('assigned', { 'faculty_choice.student_user_id': assignedResult.studentUserId });
+      return true;
+    }
+
+    logger.debug('not registered or assigned');
+    return false;
+  });
+}
+
+async function getLateRegistrantsCountByDraft(db: DbConnection, draftId: bigint) {
+  return await tracer.asyncSpan('get-late-registrants-count-by-draft', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    const { result } = await db
+      .select({ result: count(schema.studentRank.userId) })
+      .from(schema.studentRank)
+      .innerJoin(schema.draft, eq(schema.studentRank.draftId, schema.draft.id))
+      .where(
+        and(
+          eq(schema.studentRank.draftId, draftId),
+          lt(schema.draft.registrationClosedAt, schema.studentRank.createdAt),
+        ),
+      )
+      .then(assertSingle);
+    return result;
+  });
+}
+
+async function getDraftRegistrationTimeline(db: DbConnection, id: bigint) {
+  return await tracer.asyncSpan('get-draft-registration-timeline', async span => {
+    span.setAttribute('database.draft.id', id.toString());
+    return await db.query.studentRank.findMany({
+      columns: { createdAt: true },
+      where: ({ draftId }, { eq }) => eq(draftId, id),
+      orderBy: ({ createdAt }) => createdAt,
+    });
+  });
+}
+
+async function getLabDemandBordaScores(db: DbConnection, draftId: bigint) {
+  return await tracer.asyncSpan('get-lab-demand-borda-scores', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    const studentLabCount = db
+      .select({
+        draftId: schema.studentRankLab.draftId,
+        userId: schema.studentRankLab.userId,
+        n: count().as('n'),
+      })
+      .from(schema.studentRankLab)
+      .where(eq(schema.studentRankLab.draftId, draftId))
+      .groupBy(({ draftId, userId }) => [draftId, userId])
+      .as('student_lab_count');
+    return await db
+      .select({
+        labId: schema.studentRankLab.labId,
+        bordaScore: sum(sql`${studentLabCount.n} - ${schema.studentRankLab.index} + 1`).mapWith(
+          coerceNumber,
+        ),
+      })
+      .from(schema.studentRankLab)
+      .innerJoin(
+        studentLabCount,
+        and(
+          eq(schema.studentRankLab.draftId, studentLabCount.draftId),
+          eq(schema.studentRankLab.userId, studentLabCount.userId),
+        ),
+      )
+      .where(eq(schema.studentRankLab.draftId, draftId))
+      .groupBy(({ labId }) => labId);
+  });
+}
+
+async function getDraftPreferenceAlignment(db: DbConnection, draftId: bigint) {
+  return await tracer.asyncSpan('get-draft-preference-alignment', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    const studentLabCount = db
+      .select({
+        draftId: schema.studentRankLab.draftId,
+        userId: schema.studentRankLab.userId,
+        n: count().as('n'),
+      })
+      .from(schema.studentRankLab)
+      .where(eq(schema.studentRankLab.draftId, draftId))
+      .groupBy(({ draftId, userId }) => [draftId, userId])
+      .as('student_lab_count');
+    return await db
+      .select({
+        preferenceRank: schema.studentRankLab.index,
+        totalRanked: studentLabCount.n,
+        count: count(),
+      })
+      .from(schema.facultyChoiceUser)
+      .leftJoin(
+        schema.studentRankLab,
+        and(
+          eq(schema.facultyChoiceUser.draftId, schema.studentRankLab.draftId),
+          eq(schema.facultyChoiceUser.studentUserId, schema.studentRankLab.userId),
+          eq(schema.facultyChoiceUser.labId, schema.studentRankLab.labId),
+        ),
+      )
+      .leftJoin(
+        studentLabCount,
+        and(
+          eq(schema.facultyChoiceUser.draftId, studentLabCount.draftId),
+          eq(schema.facultyChoiceUser.studentUserId, studentLabCount.userId),
+        ),
+      )
+      .where(eq(schema.facultyChoiceUser.draftId, draftId))
+      .groupBy(({ preferenceRank, totalRanked }) => [preferenceRank, totalRanked]);
+  });
+}
+
+async function insertLotteryChoices(
+  db: DrizzleTransaction,
+  draftId: bigint,
+  adminUserId: string,
+  assignmentUserIdToLabPairs: (readonly [string, string])[],
+  mode: 'intervention' | 'lottery',
+) {
+  return await tracer.asyncSpan('insert-lottery-choices', async span => {
+    span.setAttributes({
+      'database.draft.id': draftId.toString(),
+      'database.user.admin_id': adminUserId,
+      'database.choice.mode': mode,
+    });
+    const draft = await db.query.draft.findFirst({
+      columns: { maxRounds: true },
+      where: ({ id }, { eq }) => eq(id, draftId),
+    });
+    if (typeof draft === 'undefined') return;
+
+    const labs = await db
+      .select({ id: schema.draftLabQuota.labId })
+      .from(schema.draftLabQuota)
+      .where(eq(schema.draftLabQuota.draftId, draftId));
+    if (labs.length === 0) return;
+
+    const round = mode === 'intervention' ? draft.maxRounds + 1 : null;
+    await db
+      .insert(schema.facultyChoice)
+      .values(
+        labs.map(
+          ({ id }) =>
+            ({
+              draftId,
+              round,
+              labId: id,
+              userId: adminUserId,
+            }) satisfies schema.NewFacultyChoice,
+        ),
+      )
+      .onConflictDoUpdate({
+        target: [
+          schema.facultyChoice.draftId,
+          schema.facultyChoice.round,
+          schema.facultyChoice.labId,
+        ],
+        set: { userId: sql`excluded.${sql.raw(schema.facultyChoice.userId.name)}` },
+      });
+
+    if (assignmentUserIdToLabPairs.length > 0) {
+      const facultyUserId = mode === 'intervention' ? adminUserId : null;
+      await db.insert(schema.facultyChoiceUser).values(
+        assignmentUserIdToLabPairs.map(
+          ([studentUserId, labId]): schema.NewFacultyChoiceUser => ({
+            facultyUserId,
+            studentUserId,
+            draftId,
+            round,
+            labId,
+          }),
+        ),
+      );
+    }
+
+    return draft;
+  });
+}
+
+async function syncResultsToUsers(db: DbConnection, draftId: bigint) {
+  return await tracer.asyncSpan('sync-results-to-users', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    return await db
+      .update(schema.user)
+      .set({ labId: schema.facultyChoiceUser.labId })
+      .from(schema.facultyChoiceUser)
+      .where(
+        and(
+          eq(schema.facultyChoiceUser.draftId, draftId),
+          eq(schema.user.id, schema.facultyChoiceUser.studentUserId),
+        ),
+      )
+      .returning({ userId: schema.user.id, labId: schema.facultyChoiceUser.labId });
+  });
+}
+
+async function getDraftAssignmentCountsByAttribute(db: DbConnection, draftId: bigint) {
+  return await tracer.asyncSpan('get-draft-assignment-counts-by-lab', async span => {
+    span.setAttribute('database.draft.id', draftId.toString());
+    return await db
+      .select({
+        labId: schema.facultyChoiceUser.labId,
+        round: schema.facultyChoiceUser.round,
+        count: count(schema.facultyChoiceUser.studentUserId),
+      })
+      .from(schema.facultyChoiceUser)
+      .where(eq(schema.facultyChoiceUser.draftId, draftId))
+      .groupBy(({ labId, round }) => [labId, round]);
+  });
+}

@@ -1,13 +1,16 @@
+import { fail as assertFail } from 'node:assert/strict';
+
 import * as v from 'valibot';
+import { and, eq, isNull } from 'drizzle-orm';
 import { decode } from 'decode-formdata';
 import { error, fail, redirect } from '@sveltejs/kit';
 
+import * as schema from '$lib/server/database/schema';
 import { db } from '$lib/server/database';
 import {
-  deleteInvitation,
+  type DbConnection,
   getFacultyAndStaff,
   getLabRegistry,
-  inviteNewFacultyOrStaff,
 } from '$lib/server/database/drizzle';
 import { Logger } from '$lib/server/telemetry/logger';
 import { Tracer } from '$lib/server/telemetry/tracer';
@@ -165,3 +168,45 @@ export const actions = {
     });
   },
 };
+
+async function inviteNewFacultyOrStaff(db: DbConnection, email: string, labId: string | null) {
+  return await tracer.asyncSpan('invite-new-faculty-or-staff', async span => {
+    span.setAttribute('database.user.email', email);
+    if (labId !== null) span.setAttribute('database.lab.id', labId);
+    const { rowCount } = await db
+      .insert(schema.user)
+      .values({ email, labId, isAdmin: true })
+      .onConflictDoNothing({ target: schema.user.email });
+    switch (rowCount) {
+      case 0:
+        return false;
+      case 1:
+        return true;
+      default:
+        assertFail(`inviteNewFacultyOrStaff => unexpected insertion count ${rowCount}`);
+    }
+  });
+}
+
+async function deleteInvitation(db: DbConnection, id: string) {
+  return await tracer.asyncSpan('delete-invitation', async span => {
+    span.setAttribute('database.user.id', id);
+    const { rowCount } = await db
+      .delete(schema.user)
+      .where(
+        and(
+          eq(schema.user.id, id),
+          eq(schema.user.isAdmin, true),
+          isNull(schema.user.googleUserId),
+        ),
+      );
+    switch (rowCount) {
+      case 0:
+        return false;
+      case 1:
+        return true;
+      default:
+        assertFail(`deleteInvitation => unexpected deletion count ${rowCount}`);
+    }
+  });
+}

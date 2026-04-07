@@ -1,21 +1,22 @@
 import { Buffer } from 'node:buffer';
+import { fail } from 'node:assert/strict';
 import { timingSafeEqual } from 'node:crypto';
 
 import addresses from 'email-addresses';
 import { createRemoteJWKSet, customFetch, jwksCache, jwtVerify } from 'jose';
 import { error, redirect } from '@sveltejs/kit';
 import { parse } from 'valibot';
+import { sql } from 'drizzle-orm';
 
 import * as GOOGLE from '$lib/server/env/google';
+import * as schema from '$lib/server/database/schema';
 import { ASSERT_DOMAIN } from '$lib/server/env/drap/oauth';
+import { assertSingle } from '$lib/server/assert';
 import { AuthorizationCode, IdToken, TokenResponse } from '$lib/server/models/oauth';
 import { db } from '$lib/server/database';
+import { type DbConnection, upsertOpenIdUser } from '$lib/server/database/drizzle';
 import { ENCRYPTION_KEY } from '$lib/server/env/drap/crypto';
-import {
-  insertValidSession,
-  upsertCandidateSender,
-  upsertOpenIdUser,
-} from '$lib/server/database/drizzle';
+import { encryptSecret } from '$lib/crypto';
 import { Logger } from '$lib/server/telemetry/logger';
 import { Tracer } from '$lib/server/telemetry/tracer';
 
@@ -128,7 +129,7 @@ export async function GET({ fetch, cookies, setHeaders, url: { searchParams } })
         error(400, 'Nonce mismatch encountered.');
       }
 
-      // Derive hasExtendedScope from the token response's scope field.
+      // Derive `hasExtendedScope` from the token response's scope field.
       // Note that if the user tampers with the scope field in the `/login` endpoint,
       // it would be possible for them to be upgraded to a candidate sender. This
       // shouldn't be a huge issue in practice because admins should be careful about
@@ -194,4 +195,66 @@ export async function GET({ fetch, cookies, setHeaders, url: { searchParams } })
 
   logger.info('oauth callback complete', { 'oauth.scope.extended': hasExtendedScope });
   redirect(303, hasExtendedScope ? '/dashboard/email/' : '/dashboard/');
+}
+
+async function insertValidSession(db: DbConnection, userId: string, expiredAt: Date) {
+  return await tracer.asyncSpan('insert-valid-session', async span => {
+    span.setAttribute('database.user.id', userId);
+    const { sessionId } = await db
+      .insert(schema.session)
+      .values({ userId, expiredAt })
+      .returning({ sessionId: schema.session.id })
+      .then(assertSingle);
+    return sessionId;
+  });
+}
+
+async function upsertCandidateSender(
+  db: DbConnection,
+  userId: string,
+  expiredAt: Date,
+  encryptionKey: CryptoKey,
+  accessToken: string,
+  refreshToken: string,
+  scopes: string[],
+) {
+  return await tracer.asyncSpan('upsert-candidate-sender', async span => {
+    span.setAttributes({
+      'database.user.id': userId,
+      'database.candidate_sender.expired_at': expiredAt.toISOString(),
+    });
+    const [encryptedAccessToken, encryptedRefreshToken] = await Promise.all([
+      encryptSecret(encryptionKey, accessToken),
+      encryptSecret(encryptionKey, refreshToken),
+    ]);
+    const { rowCount } = await db
+      .insert(schema.candidateSender)
+      .values({
+        userId,
+        expiredAt,
+        accessTokenIv: Buffer.from(encryptedAccessToken.iv),
+        accessTokenCipher: Buffer.from(encryptedAccessToken.cipher),
+        refreshTokenIv: Buffer.from(encryptedRefreshToken.iv),
+        refreshTokenCipher: Buffer.from(encryptedRefreshToken.cipher),
+        scopes,
+      })
+      .onConflictDoUpdate({
+        target: schema.candidateSender.userId,
+        set: {
+          updatedAt: sql`now()`,
+          expiredAt: sql`excluded.${sql.raw(schema.candidateSender.expiredAt.name)}`,
+          accessTokenIv: sql`excluded.${sql.raw(schema.candidateSender.accessTokenIv.name)}`,
+          accessTokenCipher: sql`excluded.${sql.raw(schema.candidateSender.accessTokenCipher.name)}`,
+          refreshTokenIv: sql`excluded.${sql.raw(schema.candidateSender.refreshTokenIv.name)}`,
+          refreshTokenCipher: sql`excluded.${sql.raw(schema.candidateSender.refreshTokenCipher.name)}`,
+          scopes: sql`excluded.${sql.raw(schema.candidateSender.scopes.name)}`,
+        },
+      });
+    switch (rowCount) {
+      case 1:
+        return;
+      default:
+        fail(`upsertCandidateSender => unexpected insertion count ${rowCount}`);
+    }
+  });
 }
