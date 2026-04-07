@@ -99,6 +99,7 @@ export async function createEmailMessage(event: RenderableEmailEvent, sender: Se
         props: {
           studentName: event.data.studentName,
           studentEmail: event.data.studentEmail,
+          avatarUrl: event.data.avatarUrl,
           labName: event.data.labName,
           draftId: event.data.draftId,
         } satisfies ComponentProps<typeof LotteryIntervened>,
