@@ -4,6 +4,7 @@
   import * as Card from '$lib/components/ui/card';
   import * as Chart from '$lib/components/ui/chart';
   import { assert } from '$lib/assert';
+  import { CHART_COLORS } from '$lib/constants';
   import type { DraftLabDistributionEntry } from '$lib/features/drafts/types';
 
   interface Props {
@@ -12,16 +13,8 @@
 
   const { data }: Props = $props();
 
-  const COLORS = [
-    'var(--chart-1)',
-    'var(--chart-2)',
-    'var(--chart-3)',
-    'var(--chart-4)',
-    'var(--chart-5)',
-  ] as const;
-
   function chartColor(i: number) {
-    const color = COLORS[i % COLORS.length];
+    const color = CHART_COLORS[i % CHART_COLORS.length];
     assert(typeof color === 'string', 'chart color index out of bounds');
     return color;
   }

@@ -7,6 +7,7 @@
 
   import * as Chart from '$lib/components/ui/chart';
   import { assert } from '$lib/assert';
+  import { CHART_COLORS } from '$lib/constants';
   import type { DraftAssignmentSummary } from '$lib/features/drafts/types';
 
   interface Props {
@@ -15,14 +16,6 @@
   }
 
   const { chart, displayedRounds }: Props = $props();
-
-  const COLORS = [
-    'var(--chart-1)',
-    'var(--chart-2)',
-    'var(--chart-3)',
-    'var(--chart-4)',
-    'var(--chart-5)',
-  ] as const;
 
   const chartMax = $derived(
     Math.max(...chart.allLabs.assignedByPhase.slice(0, displayedRounds), 1),
@@ -39,7 +32,7 @@
   });
 
   function chartColor(i: number) {
-    const color = COLORS[i % COLORS.length];
+    const color = CHART_COLORS[i % CHART_COLORS.length];
     assert(typeof color !== 'undefined', 'chart color index out of bounds');
     return color;
   }

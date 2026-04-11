@@ -7,6 +7,7 @@
   import * as Chart from '$lib/components/ui/chart';
   import * as Popover from '$lib/components/ui/popover';
   import { assert } from '$lib/assert';
+  import { CHART_COLORS } from '$lib/constants';
   import type { DraftPreferenceAlignment } from '$lib/features/drafts/types';
 
   interface Props {
@@ -17,17 +18,9 @@
 
   const NOT_PREFERRED = 'Not Preferred';
 
-  const COLORS = [
-    'var(--chart-1)',
-    'var(--chart-2)',
-    'var(--chart-3)',
-    'var(--chart-4)',
-    'var(--chart-5)',
-  ] as const;
-
   function sliceColor(label: string, i: number) {
     if (label === NOT_PREFERRED) return 'var(--muted-foreground)';
-    const color = COLORS[i % COLORS.length];
+    const color = CHART_COLORS[i % CHART_COLORS.length];
     assert(typeof color === 'string', 'chart color index out of bounds');
     return color;
   }
