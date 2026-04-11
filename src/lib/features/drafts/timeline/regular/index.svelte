@@ -11,7 +11,7 @@
 
   import RoundSummaryChart from './round-summary-chart.svelte';
   import StudentsSummary from './students-summary.svelte';
-  import UndraftedDrawer from './undrafted-drawer.svelte';
+  import UndraftedDrawer from './undrafted-drawer/index.svelte';
 
   import SystemLogsLoader from './system-logs/loader.svelte';
 
