@@ -10,6 +10,9 @@
 node_modules
 scratchpad
 
+# Host-specific Production Files
+/certificate.pem
+
 # Coding Agents
 AGENTS.override.md
 CLAUDE.local.md
