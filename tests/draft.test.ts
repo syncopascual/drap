@@ -125,6 +125,9 @@ async function selectRegularStudentsView(
   page: Page,
   view: 'Pending Selection' | 'Already Drafted',
 ) {
+  await page.getByRole('tab', { name: 'Registered Students' }).click();
+  await expect(getRegularStudentsPanel(page)).toBeVisible();
+
   const trigger = getRegularStudentsViewTrigger(page);
   await expect(trigger).toBeVisible();
 
@@ -166,6 +169,24 @@ async function expectSheetContents(
 
   await page.keyboard.press('Escape');
   await expect(sheet).toBeHidden();
+}
+
+async function expectDrawerContents(
+  page: Page,
+  triggerName: string,
+  expectedVisible: (string | RegExp)[],
+  expectedHidden: (string | RegExp)[] = [],
+) {
+  await page.getByRole('button', { name: triggerName }).first().click();
+
+  const drawer = page.locator('[data-slot="drawer-content"]').last();
+  await expect(drawer).toBeVisible();
+
+  for (const value of expectedVisible) await expect(drawer).toContainText(value);
+  for (const value of expectedHidden) await expect(drawer).not.toContainText(value);
+
+  await page.keyboard.press('Escape');
+  await expect(drawer).toBeHidden();
 }
 
 async function expectChartTooltipPoint(
@@ -834,7 +855,7 @@ test.describe('Draft Lifecycle', () => {
       const response = await responsePromise;
       const responseData = await response.json();
       expect(responseData.type).toBe('success');
-      await expect(adminPage.getByText(/Round 1/u)).toBeVisible();
+      await expect(adminPage.getByText(/Round 1/u).first()).toBeVisible();
     });
   });
 
@@ -878,22 +899,56 @@ test.describe('Draft Lifecycle', () => {
   test.describe('Round 1 — 1st choice', () => {
     test('admin draft page shows regular loader labels', async ({ adminPage }) => {
       await adminPage.goto('/dashboard/drafts/1/');
+      await expect(adminPage.locator('#regular-round-summary-chart')).toBeVisible();
+
+      await adminPage.getByRole('tab', { name: 'Registered Students' }).click();
+      await expect(adminPage.getByRole('tabpanel', { name: 'Registered Students' })).toBeVisible();
       await expectRegularStudentsViewOptions(adminPage, 'Pending Selection');
       await selectRegularStudentsView(adminPage, 'Already Drafted');
       await expectRegularStudentsViewOptions(adminPage, 'Already Drafted');
 
-      await adminPage.getByRole('tab', { name: 'Laboratories' }).click();
-      await expectVisibleButtons(adminPage, ['Members', 'Preferred', 'Interested']);
+      await adminPage.getByRole('tab', { name: 'Lab Distributions' }).click();
+      await expect(adminPage.locator('#regular-round-summary-chart')).toBeVisible();
     });
 
-    test('pending selection fetches on initial page load', async ({ adminPage }) => {
-      const initialResponse = adminPage.waitForResponse(
+    test('pending selection does not fetch until Registered Students tab is opened', async ({
+      adminPage,
+    }) => {
+      const noResponseBeforeOpen = adminPage.waitForResponse(
         response => new URL(response.url()).pathname === '/dashboard/drafts/1/draftees',
+        { timeout: 1000 },
       );
 
       await adminPage.goto('/dashboard/drafts/1/');
+      await expect(adminPage.locator('#regular-round-summary-chart')).toBeVisible();
+      await adminPage.waitForLoadState('networkidle');
+      await expect(noResponseBeforeOpen).rejects.toThrow();
+
+      const initialResponse = adminPage.waitForResponse(
+        response => new URL(response.url()).pathname === '/dashboard/drafts/1/draftees',
+      );
+      await adminPage.getByRole('tab', { name: 'Registered Students' }).click();
+      await expect(adminPage.getByRole('tabpanel', { name: 'Registered Students' })).toBeVisible();
       await initialResponse;
       await expectRegularStudentsViewOptions(adminPage, 'Pending Selection');
+    });
+
+    test('View System Logs opens the regular-round drawer', async ({ adminPage }) => {
+      await adminPage.goto('/dashboard/drafts/1/');
+
+      await expectDrawerContents(adminPage, 'View System Logs', [
+        /System Logs/u,
+        /Show System Automation Logs/u,
+      ]);
+    });
+
+    test('View Undrafted opens the regular-round drawer', async ({ adminPage }) => {
+      await adminPage.goto('/dashboard/drafts/1/');
+
+      await expectDrawerContents(adminPage, 'View Undrafted', [
+        /Undrafted Students/u,
+        /Select at least one lab to view students\./u,
+      ]);
     });
 
     test('switching to already drafted does not refetch after initial load', async ({
@@ -904,6 +959,8 @@ test.describe('Draft Lifecycle', () => {
       );
 
       await adminPage.goto('/dashboard/drafts/1/');
+      await adminPage.getByRole('tab', { name: 'Registered Students' }).click();
+      await expect(adminPage.getByRole('tabpanel', { name: 'Registered Students' })).toBeVisible();
       await initialResponse;
 
       const noResponseOnSwitch = adminPage.waitForResponse(
@@ -922,6 +979,8 @@ test.describe('Draft Lifecycle', () => {
       );
 
       await adminPage.goto('/dashboard/drafts/1/');
+      await adminPage.getByRole('tab', { name: 'Registered Students' }).click();
+      await expect(adminPage.getByRole('tabpanel', { name: 'Registered Students' })).toBeVisible();
       await initialResponse;
       await selectRegularStudentsView(adminPage, 'Already Drafted');
 
@@ -1224,7 +1283,7 @@ test.describe('Draft Lifecycle', () => {
   test.describe('Verify Round 2', () => {
     test('draft is now in Round 2', async ({ adminPage }) => {
       await adminPage.goto('/dashboard/drafts/1/');
-      await expect(adminPage.getByText(/Round 2/u)).toBeVisible();
+      await expect(adminPage.getByText(/Round 2/u).first()).toBeVisible();
       await expectRegularStudentsContents(
         adminPage,
         'Already Drafted',
@@ -1447,7 +1506,7 @@ test.describe('Draft Lifecycle', () => {
   test.describe('Verify Round 3', () => {
     test('draft is now in Round 3', async ({ adminPage }) => {
       await adminPage.goto('/dashboard/drafts/1/');
-      await expect(adminPage.getByText(/Round 3/u)).toBeVisible();
+      await expect(adminPage.getByText(/Round 3/u).first()).toBeVisible();
       await expectRegularStudentsContents(
         adminPage,
         'Already Drafted',
@@ -1827,6 +1886,7 @@ test.describe('Draft Lifecycle', () => {
       await expect(adminPage.getByRole('heading', { name: 'Review Phase' })).toBeVisible();
       await expect(adminPage.getByRole('heading', { name: 'Lottery Phase' })).toHaveCount(0);
       await expect(adminPage.getByRole('button', { name: 'Finalize Draft' })).toBeVisible();
+      await expect(adminPage.getByRole('button', { name: 'View Undrafted' })).toHaveCount(0);
     });
   });
 
@@ -2607,7 +2667,7 @@ test.describe('Draft Lifecycle', () => {
       const responseData = await response.json();
       expect(responseData.type).toBe('success');
 
-      await expect(adminPage.getByText(/Round 1/u)).toBeVisible();
+      await expect(adminPage.getByText(/Round 1/u).first()).toBeVisible();
     });
 
     test('Draft #2 round-1 auto-acks show correct callouts', async ({
@@ -2697,7 +2757,7 @@ test.describe('Draft Lifecycle', () => {
 
     test('Draft #2 reaches Round 2', async ({ adminPage }) => {
       await adminPage.goto('/dashboard/drafts/2/');
-      await expect(adminPage.getByText(/Round 2/u)).toBeVisible();
+      await expect(adminPage.getByText(/Round 2/u).first()).toBeVisible();
     });
 
     test('Draft #2 round-2 auto-acks show correct callouts', async ({

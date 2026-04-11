@@ -59,7 +59,9 @@
   const ctx = getChartContext();
 
   const tooltipPayload: TooltipPayload[] = $derived(
-    ctx.tooltip.series.filter(({ visible }) => visible),
+    ctx.tooltip.series.filter(
+      ({ visible, value }) => visible && value !== null && typeof value !== 'undefined',
+    ),
   );
 
   const formattedLabel = $derived.by(() => {
