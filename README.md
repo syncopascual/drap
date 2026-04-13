@@ -80,7 +80,7 @@ For host-run app processes, `pnpm docker:dev` already starts PostgreSQL, Inngest
 | `POSTGRES_URL`                | App database connection.                    | Yes          | `postgresql://postgres:password@localhost:5432/postgres`; use `/test` in CI.                              |
 | `GOOGLE_OAUTH_CLIENT_ID`      | Google OAuth login.                         | Yes          | Value from the [Google Cloud Console].                                                                    |
 | `GOOGLE_OAUTH_CLIENT_SECRET`  | Google OAuth login.                         | Yes          | Value from the [Google Cloud Console].                                                                    |
-| `DRAP_ENCRYPTION_KEY`         | Encrypts sensitive OAuth tokens.            | Yes          | Generate with `pnpm encryption:generate`.                                                                 |
+| `DRAP_ENCRYPTION_KEY`         | Encrypts sensitive OAuth tokens.            | Yes          | Generate with `pnpm random:bytes -- 32`.                                                                  |
 | `DRAP_ASSERT_DOMAIN`          | Allowed email-domain restriction.           | No           | `up.edu.ph` for production-like behavior.                                                                 |
 | `DRAP_ENABLE_EMAILS`          | Real email delivery.                        | No           | Leave unset unless you intentionally want live email delivery.                                            |
 | `INNGEST_DEV`                 | Host-run app access to local Inngest.       | Yes          | `http://localhost:8288`; the server itself is provided by `pnpm docker:dev`.                              |
@@ -99,7 +99,7 @@ For `pnpm docker:prod:app`, Compose derives the canonical origin from `SCHEME` a
 | `SCHEME`                     | Canonical public scheme for the app origin. | Yes          | `https`                                                      |
 | `HOST`                       | HAProxy ingress host matching.              | Yes          | `drap.dcs.upd.edu.ph`                                        |
 | `POSTGRES_PASSWORD`          | PostgreSQL container credentials.           | Yes          | Use a strong random secret.                                  |
-| `DRAP_ENCRYPTION_KEY`        | Encrypts sensitive OAuth tokens.            | Yes          | Generate with `pnpm encryption:generate`.                    |
+| `DRAP_ENCRYPTION_KEY`        | Encrypts sensitive OAuth tokens.            | Yes          | Generate with `pnpm random:bytes -- 32`.                     |
 | `GOOGLE_OAUTH_CLIENT_ID`     | Google OAuth login.                         | Yes          | Value from the [Google Cloud Console].                       |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | Google OAuth login.                         | Yes          | Value from the [Google Cloud Console].                       |
 | `INNGEST_EVENT_KEY`          | Inngest event signing.                      | Yes          | Production event key from Inngest.                           |
@@ -130,8 +130,17 @@ pnpm install
 
 # Generate the AES-256-GCM encryption key used for sensitive OAuth tokens.
 # Save this key to the `DRAP_ENCRYPTION_KEY` environment variable in `.env`.
-pnpm encryption:generate
+pnpm random:bytes -- 32
+
+# Other useful examples:
+# Save this key to the `RUSTFS_ACCESS_KEY` environment variable.
+pnpm random:bytes -- 24
+
+# Save this key to the `RUSTFS_SECRET_KEY` environment variable.
+pnpm random:bytes -- 48
 ```
+
+The generic helper script accepts a single positional `<bytes>` argument and prints a Base64URL-encoded random value. It is implemented in [`scripts/generate-random-bytes.js`](./scripts/generate-random-bytes.js).
 
 ### Database Commands
 
