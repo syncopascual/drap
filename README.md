@@ -149,7 +149,7 @@ pnpm random:bytes -- 24
 pnpm random:bytes -- 48
 ```
 
-The generic helper script accepts a single positional `<bytes>` argument and prints a Base64URL-encoded random value. It is implemented in [`scripts/generate-random-bytes.js`](./scripts/generate-random-bytes.js).
+The generic helper script accepts a single positional `<bytes>` argument and prints a Base64URL-encoded random value. It is implemented in [`src/scripts/generate-random-bytes.js`](./src/scripts/generate-random-bytes.js).
 
 ### Database Commands
 

@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync",
-    "random:bytes": "node ./scripts/generate-random-bytes.js",
+    "random:bytes": "node ./src/scripts/generate-random-bytes.js",
     "fmt": "prettier . --experimental-cli --check --cache-location .prettiercache",
     "fmt:fix": "prettier . --experimental-cli --write --cache-location .prettiercache",
     "lint": "pnpm run --workspace-root --parallel /^lint:/",
