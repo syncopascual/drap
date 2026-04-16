@@ -109,7 +109,7 @@ services:
     command:
       - mb
       - --ignore-existing
-      - drap/avatars
+      - drap/draft-student-avatar
     networks:
       - storage
     restart: 'no'
