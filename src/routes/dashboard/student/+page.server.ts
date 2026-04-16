@@ -366,7 +366,7 @@ async function insertStudentRanking(
     span.setAttributes({ 'database.draft.id': draftId.toString(), 'database.user.id': userId });
     await db
       .insert(schema.studentRank)
-      .values({ draftId, userId })
+      .values({ draftId, userId, avatarObjectKey: null })
       .onConflictDoNothing({ target: [schema.studentRank.draftId, schema.studentRank.userId] });
     for (const [index, [labId, remark]] of enumerate(izip(labs, remarks)))
       await db
