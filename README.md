@@ -109,9 +109,9 @@ For `pnpm docker:prod:app`, Compose derives the canonical origin from `SCHEME` a
 | `GOOGLE_OAUTH_CLIENT_SECRET` | Google OAuth login.                         | Yes          | Value from the [Google Cloud Console].                       |
 | `INNGEST_EVENT_KEY`          | Inngest event signing.                      | Yes          | Production event key from Inngest.                           |
 | `INNGEST_SIGNING_KEY`        | Inngest webhook signing.                    | Yes          | Production signing key from Inngest.                         |
-| `RUSTFS_ACCESS_KEY`          | RustFS root access key.                     | Yes          | Generate with `pnpm random:bytes -- 24`.                     |
-| `RUSTFS_SECRET_KEY`          | RustFS root secret key.                     | Yes          | Generate with `pnpm random:bytes -- 48`.                     |
 | `OTEL_EXPORTER_OTLP_HEADERS` | OpenTelemetry auth headers.                 | Yes          | Percent-encoded Basic auth for your OpenObserve credentials. |
+| `S3_ACCESS_KEY`              | RustFS root access key.                     | Yes          | Generate with `pnpm random:bytes -- 24`.                     |
+| `S3_SECRET_KEY`              | RustFS root secret key.                     | Yes          | Generate with `pnpm random:bytes -- 48`.                     |
 | `ZO_ROOT_USER_EMAIL`         | OpenObserve bootstrap admin user.           | Yes          | Dedicated admin email address.                               |
 | `ZO_ROOT_USER_PASSWORD`      | OpenObserve bootstrap admin password.       | Yes          | Use a strong random secret.                                  |
 | `DRIZZLE_MASTERPASS`         | Drizzle Gateway admin password.             | Yes          | Use a strong random secret.                                  |
@@ -142,10 +142,10 @@ pnpm install
 pnpm random:bytes -- 32
 
 # Other useful examples:
-# Save this key to the `RUSTFS_ACCESS_KEY` environment variable.
+# Save this key to the `S3_ACCESS_KEY` environment variable.
 pnpm random:bytes -- 24
 
-# Save this key to the `RUSTFS_SECRET_KEY` environment variable.
+# Save this key to the `S3_SECRET_KEY` environment variable.
 pnpm random:bytes -- 48
 ```
 
