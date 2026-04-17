@@ -8,7 +8,12 @@ import * as schema from '$lib/server/database/schema';
 import { assertSingle } from '$lib/server/assert';
 import { coerceDate } from '$lib/coerce';
 import { db } from '$lib/server/database';
-import { type DbConnection, type DrizzleTransaction, getDrafts, getLabRegistry } from '$lib/server/database/drizzle';
+import {
+  type DbConnection,
+  type DrizzleTransaction,
+  getDrafts,
+  getLabRegistry,
+} from '$lib/server/database/drizzle';
 import { Logger } from '$lib/server/telemetry/logger';
 import { Tracer } from '$lib/server/telemetry/tracer';
 
@@ -169,7 +174,10 @@ async function getDraftStatsAggregates(db: DbConnection) {
         draftId: schema.draftLabQuota.draftId,
         labId: schema.draftLabQuota.labId,
         labName: schema.lab.name,
-        quota: sql<number>`${schema.draftLabQuota.initialQuota} + ${schema.draftLabQuota.lotteryQuota}`.as('quota'),
+        quota:
+          sql<number>`${schema.draftLabQuota.initialQuota} + ${schema.draftLabQuota.lotteryQuota}`.as(
+            'quota',
+          ),
         archivedAt: schema.lab.deletedAt,
       })
       .from(schema.draftLabQuota)
@@ -209,23 +217,26 @@ async function getDraftStatsAggregates(db: DbConnection) {
 
     return years.map(year => {
       const yearDrafts = draftYears.filter(d => d.year === year);
-      const labsMap = new Map<string, {
-        labId: string;
-        labName: string;
-        isArchived: boolean;
-        archivedAt: Date | null;
-        quota: number;
-        draftedStudents: number;
-      }>();
+      const labsMap = new Map<
+        string,
+        {
+          labId: string;
+          labName: string;
+          isArchived: boolean;
+          archivedAt: Date | null;
+          quota: number;
+          draftedStudents: number;
+        }
+      >();
 
       for (const draft of yearDrafts) {
         const draftId = draft.draftId.toString();
         for (const [key, quotaData] of quotaByDraftLab) {
           if (!key.startsWith(`${draftId}-`)) continue;
-          const {labId} = quotaData;
+          const { labId } = quotaData;
           const draftedData = draftedByDraftLab.get(`${draftId}-${labId}`);
 
-          if (!labsMap.has(labId)) 
+          if (!labsMap.has(labId))
             labsMap.set(labId, {
               labId,
               labName: quotaData.labName,
@@ -234,7 +245,6 @@ async function getDraftStatsAggregates(db: DbConnection) {
               quota: 0,
               draftedStudents: 0,
             });
-          
 
           const lab = labsMap.get(labId)!;
           lab.quota += quotaData.quota;

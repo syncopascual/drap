@@ -1,7 +1,11 @@
 import { index } from 'd3-array';
 
 import { CHART_COLORS } from '$lib/constants';
-import type { DraftStatsChartData, DraftStatsSeries, DraftStatsYear } from '$lib/features/drafts/types';
+import type {
+  DraftStatsChartData,
+  DraftStatsSeries,
+  DraftStatsYear,
+} from '$lib/features/drafts/types';
 
 export function buildDraftStatsChartData(
   stats: DraftStatsYear[],
@@ -14,14 +18,14 @@ export function buildDraftStatsChartData(
     return labs.map((lab, i) => {
       const points = years.map(year => {
         const yearStat = statsByYear.get(year);
-        if (!yearStat) return {year, value: null};
+        if (!yearStat) return { year, value: null };
 
         const labEntry = yearStat.labs.find(l => l.labId === lab.id);
-        if (!labEntry) return {year, value: null};
+        if (!labEntry) return { year, value: null };
 
         if (labEntry.isArchived && labEntry.archivedAt) {
           const archiveYear = labEntry.archivedAt.getFullYear();
-          if (year >= archiveYear) return {year, value: null};
+          if (year >= archiveYear) return { year, value: null };
         }
 
         return { year, value: labEntry[metric] as number };
@@ -32,14 +36,12 @@ export function buildDraftStatsChartData(
       return {
         labId: lab.id,
         labName: lab.name,
-        isArchived: labStats.some(s =>
-          s.labs.find(l => l.labId === lab.id)?.isArchived
-        ),
+        isArchived: labStats.some(s => s.labs.find(l => l.labId === lab.id)?.isArchived),
         color: CHART_COLORS[i % CHART_COLORS.length] ?? 'var(--chart-1)',
         points,
       };
     });
-  };
+  }
 
   return {
     years,
