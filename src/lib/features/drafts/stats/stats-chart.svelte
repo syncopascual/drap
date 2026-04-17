@@ -231,7 +231,7 @@
       {@const chartLabs = chartData
         ? [
             ...new Map(
-              chartData.quotaSeries.map(s => [
+              chartData.draftedSeries.map(s => [
                 s.labId,
                 { id: s.labId, name: s.labName, isArchived: s.isArchived },
               ]),
