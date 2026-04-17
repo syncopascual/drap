@@ -1,17 +1,17 @@
 <script lang="ts">
   import { AreaChart } from 'layerchart';
   import { cubicOut } from 'svelte/easing';
+  import { tickStep } from 'd3-array';
   import { format } from 'd3-format';
   import type { MotionOptions } from 'layerchart/utils/motion.svelte';
   import { prefersReducedMotion } from 'svelte/motion';
   import { scalePoint } from 'd3-scale';
-  import { tickStep } from 'd3-array';
 
   import * as Card from '$lib/components/ui/card';
   import * as Chart from '$lib/components/ui/chart';
   import * as NativeSelect from '$lib/components/ui/native-select';
-  import type { DraftStatsChartData, DraftStatsSeries } from '$lib/features/drafts/types';
   import { Skeleton } from '$lib/components/ui/skeleton';
+  import type { DraftStatsChartData, DraftStatsSeries } from '$lib/features/drafts/types';
 
   interface Props {
     stats: Promise<DraftStatsChartData | null>;
@@ -22,13 +22,6 @@
 
   let quotaSelectedLabId = $state('');
   let draftedSelectedLabId = $state('');
-  let chartData = $state<DraftStatsChartData | null>(null);
-
-  $effect(() => {
-    stats.then(data => {
-      chartData = data;
-    });
-  });
 
   const { chartMotion, axisMotion } = $derived<{
     chartMotion: MotionOptions;
@@ -42,17 +35,41 @@
         },
   );
 
-  const quotaFilteredSeries = $derived.by(() => {
+  const quotaConfig = (chartData: DraftStatsChartData | null) => {
+    const config: Record<string, { label: string; color: string }> = {};
+    if (!chartData) return config;
+    const series = quotaSelectedLabId === ''
+      ? chartData.quotaSeries
+      : chartData.quotaSeries.filter(s => s.labId === quotaSelectedLabId);
+    for (const s of series) {
+      config[s.labId] = { label: s.labName, color: s.color };
+    }
+    return config;
+  };
+
+  const draftedConfig = (chartData: DraftStatsChartData | null) => {
+    const config: Record<string, { label: string; color: string }> = {};
+    if (!chartData) return config;
+    const series = draftedSelectedLabId === ''
+      ? chartData.draftedSeries
+      : chartData.draftedSeries.filter(s => s.labId === draftedSelectedLabId);
+    for (const s of series) {
+      config[s.labId] = { label: s.labName, color: s.color };
+    }
+    return config;
+  };
+
+  const quotaSeries = (chartData: DraftStatsChartData | null) => {
     if (!chartData) return [];
     if (quotaSelectedLabId === '') return chartData.quotaSeries;
     return chartData.quotaSeries.filter(s => s.labId === quotaSelectedLabId);
-  });
+  };
 
-  const draftedFilteredSeries = $derived.by(() => {
+  const draftedSeries = (chartData: DraftStatsChartData | null) => {
     if (!chartData) return [];
     if (draftedSelectedLabId === '') return chartData.draftedSeries;
     return chartData.draftedSeries.filter(s => s.labId === draftedSelectedLabId);
-  });
+  };
 
   function buildWideData(series: DraftStatsSeries[], years: number[]) {
     return years.map((year, i) => {
@@ -65,63 +82,35 @@
     });
   }
 
-  const quotaChartData = $derived.by(() => {
-    if (!chartData || quotaFilteredSeries.length === 0) return [];
-    return buildWideData(quotaFilteredSeries, chartData.years);
-  });
+  function quotaChartData(chartData: DraftStatsChartData | null) {
+    const series = quotaSeries(chartData);
+    if (series.length === 0 || !chartData) return [];
+    return buildWideData(series, chartData.years);
+  }
 
-  const draftedChartData = $derived.by(() => {
-    if (!chartData || draftedFilteredSeries.length === 0) return [];
-    return buildWideData(draftedFilteredSeries, chartData.years);
-  });
+  function draftedChartData(chartData: DraftStatsChartData | null) {
+    const series = draftedSeries(chartData);
+    if (series.length === 0 || !chartData) return [];
+    return buildWideData(series, chartData.years);
+  }
 
-  const quotaConfig = $derived(() => {
-    const config: Record<string, { label: string; color: string }> = {};
-    for (const series of quotaFilteredSeries) 
-      config[series.labId] = { label: series.labName, color: series.color };
-    
-    return config;
-  });
-
-  const draftedConfig = $derived(() => {
-    const config: Record<string, { label: string; color: string }> = {};
-    for (const series of draftedFilteredSeries) 
-      config[series.labId] = { label: series.labName, color: series.color };
-    
-    return config;
-  });
-
-  const quotaMax = $derived.by(() => {
+  function chartMax(chartData: DraftStatsChartData | null, series: DraftStatsSeries[], data: ReturnType<typeof quotaChartData>) {
     let max = 0;
-    for (const point of quotaChartData) 
-      for (const series of quotaFilteredSeries) {
-        const val = point[series.labId];
+    for (const point of data) {
+      for (const s of series) {
+        const val = point[s.labId];
         if (typeof val === 'number' && val > max) max = val;
       }
-    
+    }
     return Math.max(max, 1);
-  });
-
-  const draftedMax = $derived.by(() => {
-    let max = 0;
-    for (const point of draftedChartData) 
-      for (const series of draftedFilteredSeries) {
-        const val = point[series.labId];
-        if (typeof val === 'number' && val > max) max = val;
-      }
-    
-    return Math.max(max, 1);
-  });
+  }
 
   function yTicksFn(max: number) {
     const step = Math.max(1, tickStep(0, max, 4));
     const ticks = Array.from({ length: Math.floor(max / step) + 1 }, (_, i) => i * step);
     if (ticks.at(-1) !== max) ticks.push(max);
     return ticks;
-  };
-
-  const integerFormat = format('d');
-  const yearFormat = format('d');
+  }
 
   function getSeriesProps(series: DraftStatsSeries[]) {
     return series.map(s => ({
@@ -130,6 +119,9 @@
       color: s.color,
     }));
   }
+
+  const integerFormat = format('d');
+  const yearFormat = format('d');
 </script>
 
 <Card.Root class="overflow-hidden border-border/60 bg-linear-to-br from-muted/40 via-background to-muted/10 shadow-xs">
@@ -150,40 +142,49 @@
     </div>
   </Card.Header>
   <Card.Content class="pt-0">
-    {#if !chartData}
+    {#await stats}
       <div class="flex h-80 w-full items-center justify-center">
         <Skeleton class="h-full w-full" />
       </div>
-    {:else if quotaChartData.length === 0}
-      <div class="flex h-80 w-full items-center justify-center text-muted-foreground">
-        No data available
+    {:then chartData}
+      {@const series = quotaSeries(chartData)}
+      {@const data = quotaChartData(chartData)}
+      {@const max = chartMax(chartData, series, data)}
+      {#if data.length === 0}
+        <div class="flex h-80 w-full items-center justify-center text-muted-foreground">
+          No data available
+        </div>
+      {:else}
+        <Chart.Container config={quotaConfig(chartData)} class="h-80 w-full">
+          <AreaChart
+            data={data}
+            x="year"
+            xScale={scalePoint().padding(0)}
+            padding={{ top: 8, right: 10, bottom: 50, left: 40 }}
+            series={getSeriesProps(series)}
+            legend={true}
+            points
+            grid
+            yDomain={[0, max]}
+            props={{
+              area: { fillOpacity: 0.15, motion: chartMotion },
+              points: { r: 4 },
+              tooltip: { context: { mode: 'band' } },
+              xAxis: { grid: false, format: yearFormat, motion: axisMotion, tickLabelProps: { dy: 8 } },
+              yAxis: { ticks: yTicksFn(max), format: integerFormat, motion: axisMotion, tickLabelProps: { dx: -8 } },
+            }}
+          >
+            {#snippet tooltip()}
+              <Chart.Tooltip indicator="dot" />
+            {/snippet}
+          </AreaChart>
+        </Chart.Container>
+      {/if}
+    {:catch}
+      <div class="flex h-80 w-full items-center justify-center text-destructive">
+        Failed to load data
       </div>
-    {:else}
-      <Chart.Container config={quotaConfig()} class="h-80 w-full">
-        <AreaChart
-          data={quotaChartData}
-          x="year"
-          xScale={scalePoint().padding(0)}
-          padding={{ top: 8, right: 10, bottom: 50, left: 40 }}
-          series={getSeriesProps(quotaFilteredSeries)}
-          legend={true}
-          points
-          grid
-          yDomain={[0, quotaMax]}
-          props={{
-            area: { fillOpacity: 0.15, motion: chartMotion },
-            points: { r: 4 },
-            tooltip: { context: { mode: 'band' } },
-            xAxis: { grid: false, format: yearFormat, motion: axisMotion, tickLabelProps: { dy: 8 } },
-            yAxis: { ticks: yTicksFn(quotaMax), format: integerFormat, motion: axisMotion, tickLabelProps: { dx: -8 } },
-          }}
-        >
-          {#snippet tooltip()}
-            <Chart.Tooltip indicator="dot" />
-          {/snippet}
-        </AreaChart>
-      </Chart.Container>
-    {/if}
+    {/await}
   </Card.Content>
 </Card.Root>
 
@@ -205,39 +206,48 @@
     </div>
   </Card.Header>
   <Card.Content class="pt-0">
-    {#if !chartData}
+    {#await stats}
       <div class="flex h-80 w-full items-center justify-center">
         <Skeleton class="h-full w-full" />
       </div>
-    {:else if draftedChartData.length === 0}
-      <div class="flex h-80 w-full items-center justify-center text-muted-foreground">
-        No data available
+    {:then chartData}
+      {@const series = draftedSeries(chartData)}
+      {@const data = draftedChartData(chartData)}
+      {@const max = chartMax(chartData, series, data)}
+      {#if data.length === 0}
+        <div class="flex h-80 w-full items-center justify-center text-muted-foreground">
+          No data available
+        </div>
+      {:else}
+        <Chart.Container config={draftedConfig(chartData)} class="h-80 w-full">
+          <AreaChart
+            data={data}
+            x="year"
+            xScale={scalePoint().padding(0)}
+            padding={{ top: 8, right: 10, bottom: 50, left: 40 }}
+            series={getSeriesProps(series)}
+            legend={true}
+            points
+            grid
+            yDomain={[0, max]}
+            props={{
+              area: { fillOpacity: 0.15, motion: chartMotion },
+              points: { r: 4 },
+              tooltip: { context: { mode: 'band' } },
+              xAxis: { grid: false, format: yearFormat, motion: axisMotion, tickLabelProps: { dy: 8 } },
+              yAxis: { ticks: yTicksFn(max), format: integerFormat, motion: axisMotion, tickLabelProps: { dx: -8 } },
+            }}
+          >
+            {#snippet tooltip()}
+              <Chart.Tooltip indicator="dot" />
+            {/snippet}
+          </AreaChart>
+        </Chart.Container>
+      {/if}
+    {:catch}
+      <div class="flex h-80 w-full items-center justify-center text-destructive">
+        Failed to load data
       </div>
-    {:else}
-      <Chart.Container config={draftedConfig()} class="h-80 w-full">
-        <AreaChart
-          data={draftedChartData}
-          x="year"
-          xScale={scalePoint().padding(0)}
-          padding={{ top: 8, right: 10, bottom: 50, left: 40 }}
-          series={getSeriesProps(draftedFilteredSeries)}
-          legend={true}
-          points
-          grid
-          yDomain={[0, draftedMax]}
-          props={{
-            area: { fillOpacity: 0.15, motion: chartMotion },
-            points: { r: 4 },
-            tooltip: { context: { mode: 'band' } },
-            xAxis: { grid: false, format: yearFormat, motion: axisMotion, tickLabelProps: { dy: 8 } },
-            yAxis: { ticks: yTicksFn(draftedMax), format: integerFormat, motion: axisMotion, tickLabelProps: { dx: -8 } },
-          }}
-        >
-          {#snippet tooltip()}
-            <Chart.Tooltip indicator="dot" />
-          {/snippet}
-        </AreaChart>
-      </Chart.Container>
-    {/if}
+    {/await}
   </Card.Content>
 </Card.Root>
