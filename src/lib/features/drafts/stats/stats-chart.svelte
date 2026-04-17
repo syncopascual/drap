@@ -93,10 +93,7 @@
     return buildWideData(series, chartData.years);
   }
 
-  function chartMax(
-    series: DraftStatsSeries[],
-    data: ReturnType<typeof quotaChartData>,
-  ) {
+  function chartMax(series: DraftStatsSeries[], data: ReturnType<typeof quotaChartData>) {
     let max = 0;
     for (const point of data)
       for (const s of series) {
