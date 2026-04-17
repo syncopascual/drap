@@ -35,7 +35,7 @@ const SubmitFormData = v.object({
   draft: v.pipe(v.string(), v.minLength(1)),
   labs: v.array(v.pipe(v.string(), v.minLength(1))),
   remarks: v.array(v.string()),
-  avatar: v.nullish(v.union([v.string(), v.instance(File)])),
+  avatar: v.nullish(v.union([v.literal('google'), v.instance(File)])),
 });
 
 const SERVICE_NAME = 'routes.dashboard.student';
@@ -329,7 +329,6 @@ export const actions = {
               const objectKey = await insertStudentRankingWithAvatar(db, draftId, user.id);
               if (typeof avatar === 'string') {
                 logger.info('user explicitly opted in for default Google avatar');
-                assert(avatar === '', 'unexpected avatar payload string value');
                 assert(user.avatarUrl.length > 0, 'missing google avatar URL');
                 await uploadDraftAvatarFromGoogleProfile(objectKey, user.avatarUrl, fetch);
               } else {
