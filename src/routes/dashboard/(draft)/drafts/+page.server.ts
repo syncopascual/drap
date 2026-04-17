@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { decode } from 'decode-formdata';
 import { error, redirect } from '@sveltejs/kit';
-import { isNull, sql } from 'drizzle-orm';
+import { count, isNull, sql } from 'drizzle-orm';
 
 import * as schema from '$lib/server/database/schema';
 import { assertSingle } from '$lib/server/assert';
@@ -54,7 +54,11 @@ export async function load({ locals: { session } }) {
       'lab.count': labs.length,
     });
 
-    return { drafts, labs };
+    return {
+      drafts,
+      labs,
+      draftStatsByYear: getDraftStatsAggregates(db).catch(() => null),
+    };
   });
 }
 
@@ -149,5 +153,112 @@ async function initDraft(db: DrizzleTransaction, maxRounds: number, registration
       );
 
     return draft;
+  });
+}
+
+async function getDraftStatsAggregates(db: DbConnection) {
+  return await tracer.asyncSpan('get-draft-stats-aggregates', async span => {
+    const statsByDraft = await db
+      .select({
+        draftId: schema.draft.id,
+        year: sql<number>`extract(year from lower(${schema.draft.activePeriod}))`.as('year'),
+      })
+      .from(schema.draft)
+      .where(sql`upper(${schema.draft.activePeriod}) is not null`);
+
+    if (statsByDraft.length === 0) return [];
+
+    const quotaSnapshots = await db
+      .select({
+        draftId: schema.draftLabQuota.draftId,
+        labId: schema.draftLabQuota.labId,
+        labName: schema.lab.name,
+        initialQuota: schema.draftLabQuota.initialQuota,
+        lotteryQuota: schema.draftLabQuota.lotteryQuota,
+        deletedAt: schema.lab.deletedAt,
+      })
+      .from(schema.draftLabQuota)
+      .innerJoin(schema.lab, sql`${schema.draftLabQuota.labId} = ${schema.lab.id}`);
+
+    const draftedCounts = await db
+      .select({
+        draftId: schema.facultyChoiceUser.draftId,
+        labId: schema.facultyChoiceUser.labId,
+        count: count(schema.facultyChoiceUser.studentUserId),
+      })
+      .from(schema.facultyChoiceUser)
+      .groupBy(schema.facultyChoiceUser.draftId, schema.facultyChoiceUser.labId);
+
+    const quotaByDraftLab = index(
+      quotaSnapshots.map(q => ({
+        draftId: q.draftId.toString(),
+        labId: q.labId,
+        labName: q.labName,
+        quota: q.initialQuota + q.lotteryQuota,
+        isArchived: q.deletedAt !== null,
+        archivedAt: q.deletedAt,
+      })),
+      q => `${q.draftId}-${q.labId}`,
+    );
+
+    const draftedByDraftLab = index(
+      draftedCounts.map(d => ({
+        draftId: d.draftId.toString(),
+        labId: d.labId,
+        count: d.count,
+      })),
+      d => `${d.draftId}-${d.labId}`,
+    );
+
+    const draftYear = index(statsByDraft, d => d.draftId.toString());
+
+    const groupedByYear = rollup(
+      statsByDraft,
+      drafts => drafts,
+      d => d.year,
+    );
+
+    return Array.from(groupedByYear.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([year, drafts]) => {
+        const labs = new Map<string, {
+          labId: string;
+          labName: string;
+          isArchived: boolean;
+          archivedAt: Date | null;
+          quota: number;
+          draftedStudents: number;
+        }>();
+
+        for (const draft of drafts) {
+          const draftId = draft.draftId.toString();
+          for (const [key, quotaData] of quotaByDraftLab) {
+            if (!key.startsWith(`${draftId}-`)) continue;
+            const labId = quotaData.labId;
+            const draftedData = draftedByDraftLab.get(`${draftId}-${labId}`);
+
+            if (!labs.has(labId)) {
+              labs.set(labId, {
+                labId,
+                labName: quotaData.labName,
+                isArchived: quotaData.isArchived,
+                archivedAt: quotaData.archivedAt,
+                quota: 0,
+                draftedStudents: 0,
+              });
+            }
+
+            const lab = labs.get(labId)!;
+            lab.quota += quotaData.quota;
+            lab.draftedStudents += draftedData?.count ?? 0;
+          }
+        }
+
+        return {
+          year,
+          labs: Array.from(labs.values()),
+          totalDrafted: Array.from(labs.values()).reduce((sum, l) => sum + l.draftedStudents, 0),
+        };
+      });
   });
 }
