@@ -29,7 +29,7 @@ export function buildDraftStatsChartData(stats: DraftStatsYear[]): DraftStatsCha
 
         if (labEntry.isArchived && labEntry.archivedAt) {
           const archiveYear = labEntry.archivedAt.getFullYear();
-          if (year >= archiveYear) return { year, value: null };
+          if (year > archiveYear) return { year, value: null };
         }
 
         return { year, value: labEntry[metric] as number };
