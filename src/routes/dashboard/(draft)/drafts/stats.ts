@@ -7,15 +7,19 @@ import type {
   DraftStatsYear,
 } from '$lib/features/drafts/types';
 
-export function buildDraftStatsChartData(
-  stats: DraftStatsYear[],
-  labs: { id: string; name: string }[],
-): DraftStatsChartData {
+export function buildDraftStatsChartData(stats: DraftStatsYear[]): DraftStatsChartData {
   const years = [...new Set(stats.map(s => s.year))].sort();
   const statsByYear = index(stats, s => s.year);
 
+  const labsMap = new Map<string, { id: string; name: string }>();
+  for (const yearStat of stats)
+    for (const lab of yearStat.labs)
+      if (!labsMap.has(lab.labId)) labsMap.set(lab.labId, { id: lab.labId, name: lab.labName });
+
+  const allLabs = Array.from(labsMap.values());
+
   function buildSeries(metric: 'quota' | 'draftedStudents'): DraftStatsSeries[] {
-    return labs.map((lab, i) => {
+    return allLabs.map((lab, i) => {
       const points = years.map(year => {
         const yearStat = statsByYear.get(year);
         if (!yearStat) return { year, value: null };

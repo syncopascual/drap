@@ -15,10 +15,9 @@
 
   interface Props {
     stats: Promise<DraftStatsChartData | null>;
-    labs: { id: string; name: string }[];
   }
 
-  const { stats, labs }: Props = $props();
+  const { stats }: Props = $props();
 
   let quotaSelectedLabId = $state('');
   let draftedSelectedLabId = $state('');
@@ -131,25 +130,6 @@
 <Card.Root
   class="overflow-hidden border-border/60 bg-linear-to-br from-muted/40 via-background to-muted/10 shadow-xs"
 >
-  <Card.Header>
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-      <div class="space-y-1.5 lg:grow">
-        <Card.Title>Lab Quota Through the Years</Card.Title>
-        <Card.Description>
-          Historical quota snapshots by lab. Lines stop when labs are archived.
-        </Card.Description>
-      </div>
-      <NativeSelect.Root
-        bind:value={quotaSelectedLabId}
-        class="w-full bg-background/80 sm:w-auto lg:shrink-0"
-      >
-        <NativeSelect.Option value="">All Labs</NativeSelect.Option>
-        {#each labs as lab (lab.id)}
-          <NativeSelect.Option value={lab.id}>{lab.name}</NativeSelect.Option>
-        {/each}
-      </NativeSelect.Root>
-    </div>
-  </Card.Header>
   <Card.Content class="pt-0">
     {#await stats}
       <div class="flex h-80 w-full items-center justify-center">
@@ -159,6 +139,35 @@
       {@const series = quotaSeries(chartData)}
       {@const data = quotaChartData(chartData)}
       {@const max = chartMax(chartData, series, data)}
+      {@const chartLabs = chartData
+        ? [
+            ...new Map(
+              chartData.quotaSeries.map(s => [
+                s.labId,
+                { id: s.labId, name: s.labName, isArchived: s.isArchived },
+              ]),
+            ).values(),
+          ]
+        : []}
+      <Card.Header>
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div class="space-y-1.5 lg:grow">
+            <Card.Title>Lab Quota Through the Years</Card.Title>
+            <Card.Description>
+              Historical quota snapshots by lab. Lines stop when labs are archived.
+            </Card.Description>
+          </div>
+          <NativeSelect.Root
+            bind:value={quotaSelectedLabId}
+            class="w-full bg-background/80 sm:w-auto lg:shrink-0"
+          >
+            <NativeSelect.Option value="">All Labs</NativeSelect.Option>
+            {#each chartLabs as lab (lab.id)}
+              <NativeSelect.Option value={lab.id}>{lab.name}</NativeSelect.Option>
+            {/each}
+          </NativeSelect.Root>
+        </div>
+      </Card.Header>
       {#if data.length === 0}
         <div class="flex h-80 w-full items-center justify-center text-muted-foreground">
           No data available
@@ -210,23 +219,6 @@
 <Card.Root
   class="overflow-hidden border-border/60 bg-linear-to-br from-muted/40 via-background to-muted/10 shadow-xs"
 >
-  <Card.Header>
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-      <div class="space-y-1.5 lg:grow">
-        <Card.Title>Drafted Students Through the Years</Card.Title>
-        <Card.Description>Number of students drafted per lab over time.</Card.Description>
-      </div>
-      <NativeSelect.Root
-        bind:value={draftedSelectedLabId}
-        class="w-full bg-background/80 sm:w-auto lg:shrink-0"
-      >
-        <NativeSelect.Option value="">All Labs</NativeSelect.Option>
-        {#each labs as lab (lab.id)}
-          <NativeSelect.Option value={lab.id}>{lab.name}</NativeSelect.Option>
-        {/each}
-      </NativeSelect.Root>
-    </div>
-  </Card.Header>
   <Card.Content class="pt-0">
     {#await stats}
       <div class="flex h-80 w-full items-center justify-center">
@@ -236,6 +228,33 @@
       {@const series = draftedSeries(chartData)}
       {@const data = draftedChartData(chartData)}
       {@const max = chartMax(chartData, series, data)}
+      {@const chartLabs = chartData
+        ? [
+            ...new Map(
+              chartData.quotaSeries.map(s => [
+                s.labId,
+                { id: s.labId, name: s.labName, isArchived: s.isArchived },
+              ]),
+            ).values(),
+          ]
+        : []}
+      <Card.Header>
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div class="space-y-1.5 lg:grow">
+            <Card.Title>Drafted Students Through the Years</Card.Title>
+            <Card.Description>Number of students drafted per lab over time.</Card.Description>
+          </div>
+          <NativeSelect.Root
+            bind:value={draftedSelectedLabId}
+            class="w-full bg-background/80 sm:w-auto lg:shrink-0"
+          >
+            <NativeSelect.Option value="">All Labs</NativeSelect.Option>
+            {#each chartLabs as lab (lab.id)}
+              <NativeSelect.Option value={lab.id}>{lab.name}</NativeSelect.Option>
+            {/each}
+          </NativeSelect.Root>
+        </div>
+      </Card.Header>
       {#if data.length === 0}
         <div class="flex h-80 w-full items-center justify-center text-muted-foreground">
           No data available

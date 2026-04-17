@@ -4,14 +4,14 @@
   import { buildDraftStatsChartData } from './stats';
 
   const { data } = $props();
-  const { drafts, labs, draftStatsByYear } = $derived(data);
+  const { drafts, draftStatsByYear } = $derived(data);
   const [latestDraft] = $derived(drafts);
 
   const chartData = $derived.by(() => {
     if (!draftStatsByYear) return Promise.resolve(null);
     return draftStatsByYear.then(stats => {
       if (!stats) return null;
-      return buildDraftStatsChartData(stats, labs);
+      return buildDraftStatsChartData(stats);
     });
   });
 </script>
@@ -28,5 +28,5 @@
     {/if}
   </div>
   <DraftTable {drafts} />
-  <StatsChart stats={chartData} {labs} />
+  <StatsChart stats={chartData} />
 </div>
