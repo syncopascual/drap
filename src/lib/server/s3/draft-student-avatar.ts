@@ -1,6 +1,6 @@
 import assert, { strictEqual } from 'node:assert/strict';
 
-import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 
 import { assertPayloadSize, assertSecureGoogleCdnUrl, normalizeImageContentType } from './util';
 import { s3 } from './client';
@@ -21,6 +21,15 @@ async function putDraftAvatarObject(
       Key: objectKey,
       Body: bytes,
       ContentType: normalizedContentType,
+    }),
+  );
+}
+
+export async function getDraftAvatarObject(objectKey: string) {
+  return await s3.send(
+    new GetObjectCommand({
+      Bucket: DRAFT_AVATAR_BUCKET,
+      Key: objectKey,
     }),
   );
 }
