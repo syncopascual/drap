@@ -625,6 +625,7 @@ test.describe('Draft Lifecycle', () => {
         .getByRole('button', { name: 'Scientific Computing Laboratory' })
         .click();
 
+      await eagerDrafteePage.getByLabel('Photo Consent').selectOption('google');
       eagerDrafteePage.on('dialog', dialog => dialog.accept());
       const responsePromise = eagerDrafteePage.waitForResponse('/dashboard/student/?/submit');
       await eagerDrafteePage.getByRole('button', { name: 'Submit Lab Preferences' }).click();
@@ -649,6 +650,7 @@ test.describe('Draft Lifecycle', () => {
         .getByRole('button', { name: 'Scientific Computing Laboratory' })
         .click();
 
+      await patientCandidatePage.getByLabel('Photo Consent').selectOption('none');
       patientCandidatePage.on('dialog', dialog => dialog.accept());
       const responsePromise = patientCandidatePage.waitForResponse('/dashboard/student/?/submit');
       await patientCandidatePage.getByRole('button', { name: 'Submit Lab Preferences' }).click();
@@ -673,6 +675,7 @@ test.describe('Draft Lifecycle', () => {
         .getByRole('button', { name: 'Algorithms and Complexity Laboratory' })
         .click();
 
+      await persistentHopefulPage.getByLabel('Photo Consent').selectOption('none');
       persistentHopefulPage.on('dialog', dialog => dialog.accept());
       const responsePromise = persistentHopefulPage.waitForResponse('/dashboard/student/?/submit');
       await persistentHopefulPage.getByRole('button', { name: 'Submit Lab Preferences' }).click();
@@ -697,6 +700,7 @@ test.describe('Draft Lifecycle', () => {
         .getByRole('button', { name: 'Networks and Distributed Systems Laboratory' })
         .click();
 
+      await unluckyFullRankerPage.getByLabel('Photo Consent').selectOption('google');
       unluckyFullRankerPage.on('dialog', dialog => dialog.accept());
       const responsePromise = unluckyFullRankerPage.waitForResponse('/dashboard/student/?/submit');
       await unluckyFullRankerPage.getByRole('button', { name: 'Submit Lab Preferences' }).click();
@@ -718,6 +722,7 @@ test.describe('Draft Lifecycle', () => {
         .getByRole('button', { name: 'Computer Security Laboratory' })
         .click();
 
+      await partialToDraftedPage.getByLabel('Photo Consent').selectOption('google');
       partialToDraftedPage.on('dialog', dialog => dialog.accept());
       const responsePromise = partialToDraftedPage.waitForResponse('/dashboard/student/?/submit');
       await partialToDraftedPage.getByRole('button', { name: 'Submit Lab Preferences' }).click();
@@ -734,6 +739,7 @@ test.describe('Draft Lifecycle', () => {
         .getByRole('button', { name: 'Algorithms and Complexity Laboratory' })
         .click();
 
+      await partialToLotteryPage.getByLabel('Photo Consent').selectOption('none');
       partialToLotteryPage.on('dialog', dialog => dialog.accept());
       const responsePromise = partialToLotteryPage.waitForResponse('/dashboard/student/?/submit');
       await partialToLotteryPage.getByRole('button', { name: 'Submit Lab Preferences' }).click();
@@ -746,6 +752,7 @@ test.describe('Draft Lifecycle', () => {
       await noRankStudentPage.goto('/dashboard/student/');
       await expect(noRankStudentPage.getByText('Select Lab Preference')).toBeVisible();
 
+      await noRankStudentPage.getByLabel('Photo Consent').selectOption('none');
       noRankStudentPage.on('dialog', dialog => dialog.accept());
       const responsePromise = noRankStudentPage.waitForResponse('/dashboard/student/?/submit');
       await noRankStudentPage.getByRole('button', { name: 'Submit Lab Preferences' }).click();
@@ -760,10 +767,27 @@ test.describe('Draft Lifecycle', () => {
       await expect(noRankStudentPage.getByText('No Labs Selected')).toBeVisible();
     });
 
+    test('Eager sees photo-share receipt copy after reload', async ({ eagerDrafteePage }) => {
+      await eagerDrafteePage.goto('/dashboard/student/');
+      await expect(
+        eagerDrafteePage.getByText('Faculty will see this photo during review.'),
+      ).toBeVisible();
+    });
+
+    test('Patient sees opt-out receipt copy after reload', async ({ patientCandidatePage }) => {
+      await patientCandidatePage.goto('/dashboard/student/');
+      await expect(
+        patientCandidatePage.getByText(
+          'You chose not to share a photo; faculty will see only your name and student number.',
+        ),
+      ).toBeVisible();
+    });
+
     test('Idle submits 0 prefs (goes directly to lottery)', async ({ idleBystanderPage }) => {
       await idleBystanderPage.goto('/dashboard/student/');
       await expect(idleBystanderPage.getByText('Select Lab Preference')).toBeVisible();
 
+      await idleBystanderPage.getByLabel('Photo Consent').selectOption('none');
       idleBystanderPage.on('dialog', dialog => dialog.accept());
       const responsePromise = idleBystanderPage.waitForResponse('/dashboard/student/?/submit');
       await idleBystanderPage.getByRole('button', { name: 'Submit Lab Preferences' }).click();
@@ -2545,6 +2569,7 @@ test.describe('Draft Lifecycle', () => {
           .getByRole('button', { name: 'Computer Security Laboratory' })
           .click();
 
+        await secondRoundNdslFirstChoicePage.getByLabel('Photo Consent').selectOption('google');
         secondRoundNdslFirstChoicePage.on('dialog', dialog => dialog.accept());
         const responsePromise = secondRoundNdslFirstChoicePage.waitForResponse(
           '/dashboard/student/?/submit',
@@ -2581,6 +2606,7 @@ test.describe('Draft Lifecycle', () => {
           .getByRole('button', { name: 'Networks and Distributed Systems Laboratory' })
           .click();
 
+        await secondRoundCslFirstChoicePage.getByLabel('Photo Consent').selectOption('none');
         secondRoundCslFirstChoicePage.on('dialog', dialog => dialog.accept());
         const responsePromise = secondRoundCslFirstChoicePage.waitForResponse(
           '/dashboard/student/?/submit',
@@ -2617,6 +2643,7 @@ test.describe('Draft Lifecycle', () => {
           .getByRole('button', { name: 'Scientific Computing Laboratory' })
           .click();
 
+        await secondRoundSclSecondChoicePage.getByLabel('Photo Consent').selectOption('google');
         secondRoundSclSecondChoicePage.on('dialog', dialog => dialog.accept());
         const responsePromise = secondRoundSclSecondChoicePage.waitForResponse(
           '/dashboard/student/?/submit',

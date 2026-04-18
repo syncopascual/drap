@@ -60,6 +60,7 @@ const testEagerDraftee = testLabs.extend<
         googleUserId: 'test-eager-student',
         givenName: 'Eager',
         familyName: 'Draftee',
+        avatarUrl: 'https://avatar.vercel.sh/eager.svg',
         isAdmin: false,
         labId: null,
       });
@@ -177,6 +178,7 @@ const testUnluckyFullRanker = testLabs.extend<
         googleUserId: 'test-unlucky-student',
         givenName: 'Unlucky',
         familyName: 'FullRanker',
+        avatarUrl: 'https://avatar.vercel.sh/unlucky.svg',
         isAdmin: false,
         labId: null,
       });
@@ -216,6 +218,7 @@ const testPartialToDrafted = testLabs.extend<
         googleUserId: 'test-partial-drafted-student',
         givenName: 'Partial',
         familyName: 'ToDrafted',
+        avatarUrl: 'https://avatar.vercel.sh/partial-drafted.svg',
         isAdmin: false,
         labId: null,
       });
@@ -411,6 +414,7 @@ const testSecondRoundNdslFirstChoice = testLabs.extend<
         googleUserId: 'test-second-ndsl-first-choice-student',
         givenName: 'SecondNdsl',
         familyName: 'FirstChoice',
+        avatarUrl: 'https://avatar.vercel.sh/second-ndsl.svg',
         isAdmin: false,
         labId: null,
       });
@@ -492,6 +496,7 @@ const testSecondRoundSclSecondChoice = testLabs.extend<
         googleUserId: 'test-second-scl-second-choice-student',
         givenName: 'SecondScl',
         familyName: 'SecondChoice',
+        avatarUrl: 'https://avatar.vercel.sh/second-scl.svg',
         isAdmin: false,
         labId: null,
       });
