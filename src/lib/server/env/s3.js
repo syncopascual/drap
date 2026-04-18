@@ -10,4 +10,4 @@ if (building) {
   assert(typeof env.S3_SECRET_KEY !== 'undefined');
 }
 
-export const { S3_ENDPOINT = '', S3_REGION = '', S3_ACCESS_KEY = '', S3_SECRET_KEY = '' } = env;
+export const { S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY = '', S3_SECRET_KEY = '' } = env;
