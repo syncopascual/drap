@@ -27,7 +27,7 @@ export function buildDraftStatsChartData(stats: DraftStatsYear[]): DraftStatsCha
         const labEntry = yearStat.labs.find(l => l.labId === lab.id);
         if (!labEntry) return { year, value: null };
 
-        if (labEntry.isArchived && labEntry.archivedAt) {
+        if (labEntry.archivedAt !== null) {
           const archiveYear = labEntry.archivedAt.getFullYear();
           if (year > archiveYear) return { year, value: null };
         }
@@ -40,7 +40,11 @@ export function buildDraftStatsChartData(stats: DraftStatsYear[]): DraftStatsCha
       return {
         labId: lab.id,
         labName: lab.name,
-        isArchived: labStats.some(s => s.labs.find(l => l.labId === lab.id)?.isArchived),
+        isArchived: labStats.some(s => {
+          const entry = s.labs.find(l => l.labId === lab.id);
+          if (typeof entry === 'undefined') return false;
+          return entry.archivedAt !== null;
+        }),
         color: CHART_COLORS[i % CHART_COLORS.length] ?? 'var(--chart-1)',
         points,
       };

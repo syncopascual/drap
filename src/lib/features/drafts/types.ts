@@ -141,7 +141,6 @@ export interface DraftLabBordaScore {
 export interface DraftStatsLabEntry {
   labId: string;
   labName: string;
-  isArchived: boolean;
   archivedAt: Date | null;
   quota: number;
   draftedStudents: number;

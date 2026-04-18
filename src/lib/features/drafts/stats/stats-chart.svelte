@@ -14,7 +14,7 @@
   import { Skeleton } from '$lib/components/ui/skeleton';
 
   interface Props {
-    stats: Promise<DraftStatsChartData | null>;
+    stats: DraftStatsChartData | null;
   }
 
   const { stats }: Props = $props();
@@ -36,7 +36,7 @@
 
   function quotaConfig(chartData: DraftStatsChartData | null) {
     const config: Record<string, { label: string; color: string }> = {};
-    if (!chartData) return config;
+    if (chartData === null) return config;
     const series =
       quotaSelectedLabId === ''
         ? chartData.quotaSeries
@@ -48,7 +48,7 @@
 
   function draftedConfig(chartData: DraftStatsChartData | null) {
     const config: Record<string, { label: string; color: string }> = {};
-    if (!chartData) return config;
+    if (chartData === null) return config;
     const series =
       draftedSelectedLabId === ''
         ? chartData.draftedSeries
@@ -59,13 +59,13 @@
   }
 
   function quotaSeries(chartData: DraftStatsChartData | null) {
-    if (!chartData) return [];
+    if (chartData === null) return [];
     if (quotaSelectedLabId === '') return chartData.quotaSeries;
     return chartData.quotaSeries.filter(s => s.labId === quotaSelectedLabId);
   }
 
   function draftedSeries(chartData: DraftStatsChartData | null) {
-    if (!chartData) return [];
+    if (chartData === null) return [];
     if (draftedSelectedLabId === '') return chartData.draftedSeries;
     return chartData.draftedSeries.filter(s => s.labId === draftedSelectedLabId);
   }
@@ -83,13 +83,13 @@
 
   function quotaChartData(chartData: DraftStatsChartData | null) {
     const series = quotaSeries(chartData);
-    if (series.length === 0 || !chartData) return [];
+    if (series.length === 0 || chartData === null) return [];
     return buildWideData(series, chartData.years);
   }
 
   function draftedChartData(chartData: DraftStatsChartData | null) {
     const series = draftedSeries(chartData);
-    if (series.length === 0 || !chartData) return [];
+    if (series.length === 0 || chartData === null) return [];
     return buildWideData(series, chartData.years);
   }
 
