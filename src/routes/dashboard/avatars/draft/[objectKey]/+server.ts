@@ -20,14 +20,6 @@ export async function GET({ params: { objectKey }, locals: { session } }) {
   }
 
   const { user } = session;
-  if (!user.isAdmin) {
-    logger.fatal('insufficient permissions to fetch draft avatar', void 0, {
-      'session.user.id': user.id,
-      'draft.avatar.object_key': objectKey,
-    });
-    error(403);
-  }
-
   return await tracer.asyncSpan('get-draft-avatar', async span => {
     span.setAttributes({
       'session.user.id': user.id,
@@ -40,8 +32,9 @@ export async function GET({ params: { objectKey }, locals: { session } }) {
       error(404);
     }
 
-    if (user.id !== userId) {
+    if (!user.isAdmin && user.id !== userId) {
       logger.fatal('insufficient permissions to fetch draft avatar', void 0, {
+        'session.user.is_admin': user.isAdmin,
         'session.user.id': user.id,
         'owner.user.id': userId,
       });
