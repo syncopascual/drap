@@ -48,6 +48,8 @@
       "pnpm fmt:fix": "allow",
       "pnpm fmt:fix *": "allow",
       "pnpm build": "allow",
+      "pnpm test:unit": "allow",
+      "pnpm test:unit *": "allow",
       "pnpm test:playwright": "deny",
       "pnpm test:playwright *": "deny",
       "nu scripts/test-playwright.nu *": "deny",

@@ -9,6 +9,7 @@
       "Bash(pnpm fmt)",
       "Bash(pnpm fmt:fix)",
       "Bash(pnpm build)",
+      "Bash(pnpm test:unit:*)",
       "Bash(ls:*)",
       "Bash(tree:*)",
       "Bash(find:*)",
