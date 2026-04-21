@@ -30,7 +30,7 @@
     metadata,
   }: Props = $props();
 
-  let open = $derived(defaultOpen);
+  let open = $state(defaultOpen);
 </script>
 
 <div class="relative flex gap-4">
