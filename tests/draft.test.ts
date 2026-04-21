@@ -324,7 +324,7 @@ test.describe('Draft Lifecycle', () => {
       await expect(callout).toContainText(/promote a designated sender/iu);
     });
 
-    test('promote flips row to Designated and callout to info', async ({
+    test('promote flips row badge to Designated Sender', async ({
       adminPage,
       seededCandidateSender: _seeded,
     }) => {
@@ -332,6 +332,16 @@ test.describe('Draft Lifecycle', () => {
       const card = adminPage.locator('#draft-admins');
       await expect(card.getByText('Candidate Sender', { exact: true })).toBeVisible();
 
+      await card.getByRole('button', { name: 'Promote', exact: true }).click();
+      await expect(card.getByText('Designated Sender', { exact: true })).toBeVisible();
+    });
+
+    test('promoted sender shows info callout on draft layout', async ({
+      adminPage,
+      seededCandidateSender: _seeded,
+    }) => {
+      await adminPage.goto('/dashboard/users/#draft-admins');
+      const card = adminPage.locator('#draft-admins');
       await card.getByRole('button', { name: 'Promote', exact: true }).click();
       await expect(card.getByText('Designated Sender', { exact: true })).toBeVisible();
 
