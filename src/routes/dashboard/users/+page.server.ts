@@ -1,7 +1,7 @@
 import { fail as assertFail } from 'node:assert/strict';
 
 import * as v from 'valibot';
-import { and, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import { decode } from 'decode-formdata';
 import { error, fail, redirect } from '@sveltejs/kit';
 
@@ -346,18 +346,25 @@ async function getCandidateSenders(db: DbConnection) {
 async function upsertDesignatedSender(db: DbConnection, userId: string) {
   return await tracer.asyncSpan('upsert-designated-sender', async span => {
     span.setAttribute('database.user.id', userId);
-    const { rowCount } = await db
-      .insert(schema.designatedSender)
-      .values({ candidateSenderUserId: userId })
-      .onConflictDoNothing({ target: schema.designatedSender.candidateSenderUserId });
-    switch (rowCount) {
-      case 0:
-        return false;
-      case 1:
-        return true;
-      default:
-        assertFail(`upsertDesignatedSender => unexpected insertion count ${rowCount}`);
-    }
+    return await db.transaction(async tx => {
+      await tx.execute(sql`lock table ${schema.designatedSender} in exclusive mode`);
+      const [candidate] = await tx
+        .select({ userId: schema.candidateSender.userId })
+        .from(schema.candidateSender)
+        .where(eq(schema.candidateSender.userId, userId))
+        .limit(1);
+      if (typeof candidate === 'undefined') return false;
+      await tx.delete(schema.designatedSender);
+      const { rowCount } = await tx
+        .insert(schema.designatedSender)
+        .values({ candidateSenderUserId: userId });
+      switch (rowCount) {
+        case 1:
+          return true;
+        default:
+          assertFail(`upsertDesignatedSender => unexpected insertion count ${rowCount}`);
+      }
+    });
   });
 }
 
