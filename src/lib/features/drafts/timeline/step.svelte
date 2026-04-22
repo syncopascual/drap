@@ -61,7 +61,7 @@
         <Collapsible.Trigger
           class="-ml-2 flex w-full items-center justify-between rounded-lg px-2 py-1 hover:bg-muted/50"
         >
-          <div class="flex items-center gap-3">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 py-1">
             <h3 class="font-semibold">{title}</h3>
             {#if metadata}
               {@render metadata()}
@@ -79,7 +79,7 @@
       </Collapsible.Root>
     {:else}
       <!-- Non-collapsible (summary) -->
-      <div class="flex items-center gap-3 py-1">
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1 py-1">
         <h3 class="font-semibold">{title}</h3>
         {#if metadata}
           {@render metadata()}
