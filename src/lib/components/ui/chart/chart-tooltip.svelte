@@ -103,7 +103,7 @@
   {/if}
 {/snippet}
 
-<TooltipPrimitive.Root variant="none">
+<TooltipPrimitive.Root variant="none" portal={false}>
   {#if tooltipPayload.length > 0}
     <div
       bind:this={ref}

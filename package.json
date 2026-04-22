@@ -62,7 +62,7 @@
     "inngest": "^4.2.4",
     "itertools": "^2.6.0",
     "jose": "^6.2.2",
-    "layerchart": "2.0.0-next.50",
+    "layerchart": "2.0.0-next.58",
     "mime-types": "^3.0.2",
     "mimetext": "^3.0.28",
     "mode-watcher": "^1.1.0",
