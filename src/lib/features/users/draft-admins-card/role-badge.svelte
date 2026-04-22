@@ -16,7 +16,7 @@
 </script>
 
 {#if role === 'designated'}
-  <Badge variant="default" class="bg-success text-success-foreground hover:bg-success/90">
+  <Badge variant="default">
     <StarIcon class="size-3" />
     <span>Designated Sender</span>
   </Badge>
