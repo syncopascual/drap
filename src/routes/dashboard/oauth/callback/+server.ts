@@ -198,7 +198,7 @@ export async function GET({ fetch, cookies, setHeaders, url: { searchParams } })
   cookies.set('sid', sid, { path: '/dashboard', httpOnly: true, sameSite: 'lax', expires });
 
   logger.info('oauth callback complete', { 'oauth.scope.extended': hasExtendedScope });
-  redirect(303, hasExtendedScope ? '/dashboard/email/' : '/dashboard/');
+  redirect(303, hasExtendedScope ? '/dashboard/users/#draft-admins' : '/dashboard/');
 }
 
 async function insertValidSession(db: DbConnection, userId: string, expiredAt: Date) {

@@ -213,7 +213,7 @@
       <Step
         title={lotteryStepTitle}
         status={lotteryStatus}
-        defaultOpen={currentPhase === 'intervention' || currentPhase === 'review'}
+        open={currentPhase === 'intervention' || currentPhase === 'review'}
       >
         {#if currentPhase === 'intervention'}
           <LotteryActive {draftId} {labs} {snapshots} />
@@ -225,7 +225,7 @@
 
     <!-- Regular Rounds -->
     {#if currentPhase !== 'registration' && currentPhase !== 'registration-closed'}
-      <Step title="Regular Rounds" status={regularStatus} defaultOpen={currentPhase === 'regular'}>
+      <Step title="Regular Rounds" status={regularStatus} open={currentPhase === 'regular'}>
         {#snippet metadata()}
           <span class="text-sm text-muted-foreground">
             {draft.currRound === null
@@ -263,7 +263,7 @@
     <Step
       title="Registration"
       status={registrationStatus}
-      defaultOpen={currentPhase === 'registration' || currentPhase === 'registration-closed'}
+      open={currentPhase === 'registration' || currentPhase === 'registration-closed'}
       last
     >
       {#snippet metadata()}

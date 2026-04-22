@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { mergeTests, type Page } from '@playwright/test';
 
 import * as schema from '$lib/server/database/schema';
@@ -747,12 +747,22 @@ const testAclHead = testLabs.extend<{ aclHeadPage: Page }, { aclHeadUserId: stri
   },
 });
 
-const testAdmin = testDatabase.extend<{ adminPage: Page }, { adminUserId: string }>({
+const testAdmin = testDatabase.extend<
+  { adminPage: Page },
+  { adminEmail: string; adminUserId: string }
+>({
+  adminEmail: [
+    // eslint-disable-next-line no-empty-pattern
+    async ({}, use, workerInfo) => {
+      await use(`admin+worker-${workerInfo.workerIndex}@up.edu.ph`);
+    },
+    { scope: 'worker' },
+  ],
   adminUserId: [
-    async ({ database }, use) => {
+    async ({ adminEmail, database }, use, workerInfo) => {
       const { id: userId } = await createTestUser(database, {
-        email: 'admin@up.edu.ph',
-        googleUserId: 'test-admin',
+        email: adminEmail,
+        googleUserId: `test-admin-worker-${workerInfo.workerIndex}`,
         givenName: 'Draft',
         familyName: 'Administrator',
         isAdmin: true,
@@ -783,8 +793,68 @@ const testAdmin = testDatabase.extend<{ adminPage: Page }, { adminUserId: string
   },
 });
 
+const testSecondAdmin = testDatabase.extend<
+  { secondAdminPage: Page },
+  { secondAdminUserId: string }
+>({
+  secondAdminUserId: [
+    async ({ database }, use) => {
+      const { id: userId } = await createTestUser(database, {
+        email: 'second.admin@up.edu.ph',
+        googleUserId: 'test-second-admin',
+        givenName: 'Second',
+        familyName: 'Administrator',
+        isAdmin: true,
+        labId: null,
+      });
+      await use(userId);
+    },
+    { scope: 'worker' },
+  ],
+  async secondAdminPage({ database, browser, secondAdminUserId }, use) {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const sessionId = await insertDummySession(database, secondAdminUserId);
+    await context.addCookies([
+      {
+        name: 'sid',
+        value: sessionId,
+        domain: 'localhost',
+        path: '/dashboard',
+        httpOnly: true,
+        sameSite: 'Lax',
+      },
+    ]);
+    await page.goto('/dashboard/');
+    await use(page);
+    await deleteValidSession(database, sessionId);
+    await context.close();
+  },
+});
+
+// Seeds a candidate_sender row for the current worker's admin user so parallel
+// E2E workers never contend on the same sender records.
+const testCandidateSender = testAdmin.extend<{ seededCandidateSender: string }>({
+  async seededCandidateSender({ adminUserId, database }, use) {
+    await database.insert(schema.candidateSender).values({
+      userId: adminUserId,
+      scopes: ['https://www.googleapis.com/auth/gmail.send'],
+      expiredAt: sql`now() + interval '1 hour'`,
+      accessTokenIv: sql`''::bytea`,
+      accessTokenCipher: sql`''::bytea`,
+      refreshTokenIv: sql`''::bytea`,
+      refreshTokenCipher: sql`''::bytea`,
+    });
+    await use(adminUserId);
+    await database
+      .delete(schema.candidateSender)
+      .where(eq(schema.candidateSender.userId, adminUserId));
+  },
+});
+
 export const test = mergeTests(
-  testAdmin,
+  testSecondAdmin,
+  testCandidateSender,
   testNdslHead,
   testCslHead,
   testSclHead,
