@@ -1,15 +1,10 @@
 <script lang="ts" module>
   import Step, { type Status } from '$lib/features/drafts/timeline/step.svelte';
+  import type { schema } from '$lib/server/database/drizzle';
 
   export interface Props {
     candidateCount: number;
-    designated?:
-      | {
-          givenName: string;
-          familyName: string;
-          email: string;
-        }
-      | undefined;
+    designated?: Pick<schema.User, 'givenName' | 'familyName' | 'email'>;
   }
 </script>
 
@@ -57,8 +52,9 @@
       <li class="flex items-start gap-2">
         <UsersIcon class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
         <span
-          >Consent is personal &mdash; only you can volunteer yourself. Any admin may
-          <strong>Promote</strong>, <strong>Demote</strong>, or <strong>Remove</strong> any candidate.</span
+          >Consent is personal: only you can volunteer yourself, any admin can <strong
+            >Promote</strong
+          >, <strong>Demote</strong>, or <strong>Remove</strong> candidates.</span
         >
       </li>
     </ul>
@@ -77,7 +73,8 @@
     {#if typeof designated === 'undefined'}
       <p class="text-sm text-muted-foreground">
         {#if candidateCount === 0}
-          Once a candidate exists, any admin may <strong>Promote</strong> them to designated sender.
+          Once a candidate exists, any admin can <strong>Promote</strong> them to be the
+          <strong>Designated Sender</strong>.
         {:else}
           Press <strong>Promote</strong> on any candidate's row to designate them.
         {/if}
@@ -93,8 +90,8 @@
       <li class="flex items-start gap-2">
         <TimerIcon class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
         <span
-          >Gmail rate-limits automated emails over a rolling 24-hour window &mdash; delivery may be
-          delayed during high-volume draft events.</span
+          >Gmail rate-limits automated emails over a rolling 24-hour window. Delivery may be delayed
+          during high-volume draft events.</span
         >
       </li>
     </ul>

@@ -13,7 +13,7 @@
     selfUserId: schema.User['id'];
     registeredAdmins: RegisteredAdmin[];
     candidateSenders: CandidateSenderEntry[];
-    headerAction?: Snippet;
+    children?: Snippet;
   }
 </script>
 
@@ -23,7 +23,7 @@
   import AdminRow from './admin-row.svelte';
   import SenderTimeline from './sender-timeline.svelte';
 
-  const { id, selfUserId, registeredAdmins, candidateSenders, headerAction }: Props = $props();
+  const { id, selfUserId, registeredAdmins, candidateSenders, children }: Props = $props();
 
   const designated = $derived.by(() => {
     const active = candidateSenders.find(({ isActive }) => isActive);
@@ -41,7 +41,7 @@
     class="flex flex-col items-start gap-2 pb-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:space-y-0"
   >
     <Card.Title class="text-2xl">Draft Administrators</Card.Title>
-    {@render headerAction?.()}
+    {@render children?.()}
   </Card.Header>
   <Card.Content class="space-y-6">
     <SenderTimeline candidateCount={candidateSenders.length} {designated} />
@@ -49,12 +49,12 @@
       <p class="text-sm text-muted-foreground">No registered users.</p>
     {:else}
       <ul class="space-y-2">
-        {#each registeredAdmins as admin (admin.id)}
+        {#each registeredAdmins as user (user.id)}
           <li>
             <AdminRow
-              user={admin}
-              isSelf={admin.id === selfUserId}
-              role={deriveSenderRole(admin.id, candidateSenders)}
+              {user}
+              isSelf={user.id === selfUserId}
+              role={deriveSenderRole(user.id, candidateSenders)}
             />
           </li>
         {/each}

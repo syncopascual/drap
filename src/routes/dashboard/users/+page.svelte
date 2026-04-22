@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as Card from '$lib/components/ui/card';
   import Faculty from '$lib/users/faculty.svelte';
-  import { DraftAdminsCard } from '$lib/features/users';
+  import { DraftAdminCard } from '$lib/features/users';
 
   import InviteSheet from './invite-sheet.svelte';
 
@@ -36,9 +36,7 @@
       {/if}
     </Card.Content>
   </Card.Root>
-  <DraftAdminsCard id="draft-admins" {selfUserId} {registeredAdmins} {candidateSenders}>
-    {#snippet headerAction()}
-      <InviteSheet />
-    {/snippet}
-  </DraftAdminsCard>
+  <DraftAdminCard id="draft-admins" {selfUserId} {registeredAdmins} {candidateSenders}>
+    <InviteSheet />
+  </DraftAdminCard>
 </div>

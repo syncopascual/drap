@@ -9,39 +9,36 @@
   import type { Snippet } from 'svelte';
 
   import * as Collapsible from '$lib/components/ui/collapsible';
+  import { cn } from '$lib/components/ui/utils';
 
   interface Props {
     title: string;
     status: Status;
     last?: boolean;
     collapsible?: boolean;
-    defaultOpen?: boolean;
+    open?: boolean;
     children: Snippet;
     metadata?: Snippet;
   }
 
-  const {
+  let {
     title,
     status,
     last = false,
     collapsible = true,
-    defaultOpen = false,
+    open = $bindable(false),
     children,
     metadata,
   }: Props = $props();
-
-  // `defaultOpen` seeds the initial state; user toggles persist afterwards even if the prop changes.
-  // svelte-ignore state_referenced_locally
-  let open = $state(defaultOpen);
 </script>
 
 <div class="relative flex gap-4">
-  <!-- Connector line -->
+  <!-- Connector Line -->
   {#if !last}
     <div class="absolute top-8 -bottom-2 left-3 w-px bg-border"></div>
   {/if}
 
-  <!-- Status icon -->
+  <!-- Status Icon -->
   <div
     class="relative z-10 mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-background"
   >
@@ -54,7 +51,7 @@
     {/if}
   </div>
 
-  <!-- Content area -->
+  <!-- Content Area -->
   <div class="min-w-0 grow pb-6">
     {#if collapsible}
       <Collapsible.Root bind:open>
@@ -68,7 +65,9 @@
             {/if}
           </div>
           <ChevronDownIcon
-            class="size-4 text-muted-foreground transition-transform {open ? 'rotate-180' : ''}"
+            class={cn('size-4 rotate-0 text-muted-foreground transition-transform duration-300', {
+              'rotate-180': open,
+            })}
           />
         </Collapsible.Trigger>
         <Collapsible.Content>
@@ -78,7 +77,7 @@
         </Collapsible.Content>
       </Collapsible.Root>
     {:else}
-      <!-- Non-collapsible (summary) -->
+      <!-- Non-Collapsible (Summary) -->
       <div class="flex flex-wrap items-center gap-x-3 gap-y-1 py-1">
         <h3 class="font-semibold">{title}</h3>
         {#if metadata}

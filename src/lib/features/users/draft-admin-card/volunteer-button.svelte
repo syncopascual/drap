@@ -1,13 +1,11 @@
-<script lang="ts" module>
-  export interface Props {
-    size?: 'default' | 'sm';
-  }
-</script>
-
 <script lang="ts">
   import ShieldAlertIcon from '@lucide/svelte/icons/shield-alert';
 
-  import { Button } from '$lib/components/ui/button';
+  import { Button, type ButtonSize } from '$lib/components/ui/button';
+
+  export interface Props {
+    size?: ButtonSize;
+  }
 
   const { size = 'sm' }: Props = $props();
 </script>
