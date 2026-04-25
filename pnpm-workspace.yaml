@@ -12,6 +12,10 @@ engineStrict: true
 
 minimumReleaseAge: 1440 # 1 Day
 
+minimumReleaseAgeExclude:
+  - '@tanstack/query-core@5.100.5'
+  - '@tanstack/svelte-query@6.1.24'
+
 strictDepBuilds: true
 
 trustPolicy: no-downgrade
