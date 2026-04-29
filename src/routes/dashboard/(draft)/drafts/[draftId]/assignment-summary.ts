@@ -1,5 +1,7 @@
 import { index, max, rollup, sum as d3sum } from 'd3-array';
 
+import { assert } from '$lib/assert';
+
 import type {
   DraftAssignmentCountByAttribute,
   DraftAssignmentSummary,
@@ -287,7 +289,8 @@ export function buildLotteryAggregate(
   for (const { labId, preferenceRank, count } of rows) {
     poolSize += count;
     if (!labBuckets.has(labId)) labBuckets.set(labId, new Map());
-    const lb = labBuckets.get(labId)!;
+    const lb = labBuckets.get(labId);
+    assert(typeof lb !== 'undefined', `labBuckets missing entry for labId: ${labId}`);
 
     if (preferenceRank === null) {
       unranked += count;
