@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 import {
   buildDraftAssignmentSummary,
@@ -10,7 +10,7 @@ import {
 } from './assignment-summary';
 
 describe('buildDraftAssignmentSummary', () => {
-  it('builds zero-filled phase series and aggregate metrics from grouped assignment rows', () => {
+  test('builds zero-filled phase series and aggregate metrics from grouped assignment rows', () => {
     const summary = buildDraftAssignmentSummary(
       [
         { labId: 'lab-1', round: 1, count: 2 },
@@ -61,7 +61,7 @@ describe('buildDraftAssignmentSummary', () => {
     ]);
   });
 
-  it('returns zero-filled series when no assignments exist yet', () => {
+  test('returns zero-filled series when no assignments exist yet', () => {
     const summary = buildDraftAssignmentSummary(
       [],
       [{ id: 'lab-1', name: 'Lab One', quota: 4 }],
@@ -92,7 +92,7 @@ describe('buildDraftAssignmentSummary', () => {
 });
 
 describe('ordinalChoice', () => {
-  it('formats standard ordinal suffixes', () => {
+  test('formats standard ordinal suffixes', () => {
     expect(ordinalChoice(1)).toBe('1st Choice');
     expect(ordinalChoice(2)).toBe('2nd Choice');
     expect(ordinalChoice(3)).toBe('3rd Choice');
@@ -102,13 +102,13 @@ describe('ordinalChoice', () => {
     expect(ordinalChoice(10)).toBe('10th Choice');
   });
 
-  it('handles teens as exceptions', () => {
+  test('handles teens as exceptions', () => {
     expect(ordinalChoice(11)).toBe('11th Choice');
     expect(ordinalChoice(12)).toBe('12th Choice');
     expect(ordinalChoice(13)).toBe('13th Choice');
   });
 
-  it('resumes normal suffixes after teens', () => {
+  test('resumes normal suffixes after teens', () => {
     expect(ordinalChoice(21)).toBe('21st Choice');
     expect(ordinalChoice(22)).toBe('22nd Choice');
     expect(ordinalChoice(23)).toBe('23rd Choice');
@@ -117,7 +117,7 @@ describe('ordinalChoice', () => {
 });
 
 describe('buildPreferenceAlignment', () => {
-  it('creates individual slices for each rank sorted ascending', () => {
+  test('creates individual slices for each rank sorted ascending', () => {
     const result = buildPreferenceAlignment([
       { preferenceRank: 3n, totalRanked: 5, count: 2 },
       { preferenceRank: 1n, totalRanked: 5, count: 10 },
@@ -133,7 +133,7 @@ describe('buildPreferenceAlignment', () => {
     ]);
   });
 
-  it('appends "Not Preferred" last for unranked assignments', () => {
+  test('appends "Not Preferred" last for unranked assignments', () => {
     const result = buildPreferenceAlignment([
       { preferenceRank: 1n, totalRanked: 3, count: 5 },
       { preferenceRank: null, totalRanked: null, count: 3 },
@@ -147,7 +147,7 @@ describe('buildPreferenceAlignment', () => {
     ]);
   });
 
-  it('omits "Not Preferred" when all students ranked their assigned lab', () => {
+  test('omits "Not Preferred" when all students ranked their assigned lab', () => {
     const result = buildPreferenceAlignment([
       { preferenceRank: 1n, totalRanked: 2, count: 4 },
       { preferenceRank: 2n, totalRanked: 2, count: 1 },
@@ -156,14 +156,14 @@ describe('buildPreferenceAlignment', () => {
     expect(result.slices.map(s => s.label)).not.toContain('Not Preferred');
   });
 
-  it('computes Borda score correctly for mixed ranks', () => {
+  test('computes Borda score correctly for mixed ranks', () => {
     // 2 students ranked 3 labs each, both got 1st choice → (3-1)/(3-1) = 1.0 each
     const result = buildPreferenceAlignment([{ preferenceRank: 1n, totalRanked: 3, count: 2 }]);
 
     expect(result.bordaScore).toBeCloseTo(1.0);
   });
 
-  it('scores unranked students as zero Borda', () => {
+  test('scores unranked students as zero Borda', () => {
     // 1 ranked 1st of 3 → (3-1)/(3-1) = 1.0; 1 unranked → 0
     // average = (1.0 + 0) / 2 = 0.5
     const result = buildPreferenceAlignment([
@@ -174,13 +174,13 @@ describe('buildPreferenceAlignment', () => {
     expect(result.bordaScore).toBeCloseTo(0.5);
   });
 
-  it('returns zero Borda score when no rows exist', () => {
+  test('returns zero Borda score when no rows exist', () => {
     const result = buildPreferenceAlignment([]);
     expect(result.bordaScore).toBe(0);
     expect(result.slices).toEqual([]);
   });
 
-  it('gives perfect score when only one lab was ranked', () => {
+  test('gives perfect score when only one lab was ranked', () => {
     // single-lab ranking → perfect score
     const result = buildPreferenceAlignment([{ preferenceRank: 1n, totalRanked: 1, count: 3 }]);
 
@@ -189,7 +189,7 @@ describe('buildPreferenceAlignment', () => {
 });
 
 describe('buildDraftSummaryChartData', () => {
-  it('computes supply share from initial quota only', () => {
+  test('computes supply share from initial quota only', () => {
     const summary = buildDraftSummaryChartData(
       [{ labId: 'lab-1', round: 1, count: 2 }],
       [
@@ -226,7 +226,7 @@ describe('buildDraftSummaryChartData', () => {
     ]);
   });
 
-  it('returns zero supply shares when total initial quota is zero', () => {
+  test('returns zero supply shares when total initial quota is zero', () => {
     const summary = buildDraftSummaryChartData(
       [],
       [
@@ -276,7 +276,7 @@ const LABS = [
 const MAX_ROUNDS = 3;
 
 describe('buildInterventionsAggregate', () => {
-  it('computes pool size, total lottery quota, and delta from assignment counts', () => {
+  test('computes pool size, total lottery quota, and delta from assignment counts', () => {
     const counts = [
       { labId: 'lab-a', round: 1, count: 2 },
       { labId: 'lab-b', round: 2, count: 1 },
@@ -288,7 +288,7 @@ describe('buildInterventionsAggregate', () => {
     expect(result.statCards.delta).toBe(-5); // 7 - 12
   });
 
-  it('excludes lottery rows (round IS NULL) from studentsFilledSoFar', () => {
+  test('excludes lottery rows (round IS NULL) from studentsFilledSoFar', () => {
     const counts = [
       { labId: 'lab-a', round: 1, count: 2 },
       { labId: 'lab-a', round: null, count: 1 }, // lottery row — excluded
@@ -298,7 +298,7 @@ describe('buildInterventionsAggregate', () => {
     expect(result.statCards.poolSize).toBe(8); // 10 - 2 (not 10 - 3)
   });
 
-  it('computes natural leftover and gap per lab', () => {
+  test('computes natural leftover and gap per lab', () => {
     // Alpha: initialQuota=5, filled=2 (round 1) → naturalLeftover=3, lotteryQuota=3 → gap=0
     // Beta: initialQuota=4, filled=1 (round 2) → naturalLeftover=3, lotteryQuota=6 → gap=+3
     // Gamma: initialQuota=3, filled=0 → naturalLeftover=3, lotteryQuota=3 → gap=0
@@ -323,7 +323,7 @@ describe('buildInterventionsAggregate', () => {
     expect(alpha.gap).toBe(0);
   });
 
-  it('sorts dumbbell rows by abs(gap) descending, then labName ascending for ties', () => {
+  test('sorts dumbbell rows by abs(gap) descending, then labName ascending for ties', () => {
     // Beta gap = +3 (largest), Alpha gap = 0, Gamma gap = 0 → Alpha before Gamma alphabetically
     const counts = [
       { labId: 'lab-a', round: 1, count: 2 },
@@ -336,7 +336,7 @@ describe('buildInterventionsAggregate', () => {
     expect(result.dumbbellRows[2]?.labId).toBe('lab-c');
   });
 
-  it('clamps naturalLeftover to 0 when more students filled than initial quota', () => {
+  test('clamps naturalLeftover to 0 when more students filled than initial quota', () => {
     const counts = [{ labId: 'lab-a', round: 1, count: 99 }]; // overflow
     const result = buildInterventionsAggregate(100, counts, SNAPSHOTS, MAX_ROUNDS);
 
@@ -347,7 +347,7 @@ describe('buildInterventionsAggregate', () => {
     expect(alpha.gap).toBe(3); // lotteryQuota(3) - naturalLeftover(0)
   });
 
-  it('returns zero pool when all students are filled in non-lottery rounds', () => {
+  test('returns zero pool when all students are filled in non-lottery rounds', () => {
     const counts = [
       { labId: 'lab-a', round: 1, count: 5 },
       { labId: 'lab-b', round: 2, count: 3 },
@@ -358,14 +358,14 @@ describe('buildInterventionsAggregate', () => {
     expect(result.statCards.poolSize).toBe(0);
   });
 
-  it('handles empty assignment counts with naturalLeftover equal to initialQuota', () => {
+  test('handles empty assignment counts with naturalLeftover equal to initialQuota', () => {
     const result = buildInterventionsAggregate(10, [], SNAPSHOTS, MAX_ROUNDS);
 
     expect(result.statCards.poolSize).toBe(10);
     expect(result.dumbbellRows.find(r => r.labId === 'lab-a')?.naturalLeftover).toBe(5);
   });
 
-  it('naturalLeftover uses only regular-round rows (round <= maxRounds)', () => {
+  test('naturalLeftover uses only regular-round rows (round <= maxRounds)', () => {
     const counts = [
       { labId: 'lab-a', round: 1, count: 2 },
       { labId: 'lab-a', round: MAX_ROUNDS, count: 1 }, // last regular round
@@ -377,7 +377,7 @@ describe('buildInterventionsAggregate', () => {
     expect(result.statCards.poolSize).toBe(7);
   });
 
-  it('intervention-round rows decrease poolSize but not naturalLeftover', () => {
+  test('intervention-round rows decrease poolSize but not naturalLeftover', () => {
     const counts = [
       { labId: 'lab-a', round: 1, count: 2 },
       { labId: 'lab-a', round: MAX_ROUNDS + 1, count: 1 }, // intervention round
@@ -390,7 +390,7 @@ describe('buildInterventionsAggregate', () => {
     expect(result.statCards.poolSize).toBe(7);
   });
 
-  it('round === maxRounds counts as regular, round === maxRounds + 1 counts as intervention', () => {
+  test('round === maxRounds counts as regular, round === maxRounds + 1 counts as intervention', () => {
     const counts = [
       { labId: 'lab-b', round: MAX_ROUNDS, count: 2 }, // last regular round
       { labId: 'lab-b', round: MAX_ROUNDS + 1, count: 1 }, // intervention round
@@ -405,7 +405,7 @@ describe('buildInterventionsAggregate', () => {
 });
 
 describe('buildLotteryAggregate', () => {
-  it('computes all five stat tiles from a mixed cohort', () => {
+  test('computes all five stat tiles from a mixed cohort', () => {
     const rows = [
       { labId: 'lab-a', preferenceRank: 1n, count: 2 }, // top-choice, ranked
       { labId: 'lab-b', preferenceRank: 2n, count: 1 }, // ranked (not top)
@@ -419,7 +419,7 @@ describe('buildLotteryAggregate', () => {
     expect(result.statCards.unranked).toBe(1);
   });
 
-  it('computes median rank from ranked placements only', () => {
+  test('computes median rank from ranked placements only', () => {
     // 3 ranked: ranks [1, 1, 3] → sorted distribution: rank 1 × 2, rank 3 × 1
     // rankedN = 3, target = ceil(3/2) = 2, cumulative after rank 1 = 2 ≥ 2 → median = 1
     const rows = [
@@ -431,14 +431,14 @@ describe('buildLotteryAggregate', () => {
     expect(result.statCards.medianRankHonored).toBe(1);
   });
 
-  it('returns null median when all placements are unranked', () => {
+  test('returns null median when all placements are unranked', () => {
     const rows = [{ labId: 'lab-a', preferenceRank: null, count: 3 }];
     const result = buildLotteryAggregate(rows, LABS);
 
     expect(result.statCards.medianRankHonored).toBeNull();
   });
 
-  it('returns empty outcomeStacks and zero stats for empty rows', () => {
+  test('returns empty outcomeStacks and zero stats for empty rows', () => {
     const result = buildLotteryAggregate([], LABS);
 
     expect(result.statCards.poolSize).toBe(0);
@@ -448,7 +448,7 @@ describe('buildLotteryAggregate', () => {
     expect(result.outcomeStacks).toHaveLength(0);
   });
 
-  it('builds outcome stacks grouped by lab with correct label ordering', () => {
+  test('builds outcome stacks grouped by lab with correct label ordering', () => {
     const rows = [
       { labId: 'lab-a', preferenceRank: 2n, count: 1 },
       { labId: 'lab-a', preferenceRank: null, count: 1 },
@@ -467,7 +467,7 @@ describe('buildLotteryAggregate', () => {
     expect(labels[labels.length - 1]).toBe('Not Preferred');
   });
 
-  it('excludes labs with zero lottery placements from outcomeStacks', () => {
+  test('excludes labs with zero lottery placements from outcomeStacks', () => {
     const rows = [{ labId: 'lab-a', preferenceRank: 1n, count: 2 }];
     const result = buildLotteryAggregate(rows, LABS);
 
@@ -475,7 +475,7 @@ describe('buildLotteryAggregate', () => {
     expect(result.outcomeStacks[0]?.labId).toBe('lab-a');
   });
 
-  it('sorts outcome stacks alphabetically by lab name', () => {
+  test('sorts outcome stacks alphabetically by lab name', () => {
     const rows = [
       { labId: 'lab-c', preferenceRank: 1n, count: 1 },
       { labId: 'lab-a', preferenceRank: 1n, count: 1 },
@@ -486,7 +486,7 @@ describe('buildLotteryAggregate', () => {
     expect(result.outcomeStacks[1]?.labName).toBe('Gamma Lab');
   });
 
-  it('populates the rank field on each bucket (1-based for ranked, null for unranked)', () => {
+  test('populates the rank field on each bucket (1-based for ranked, null for unranked)', () => {
     const rows = [
       { labId: 'lab-a', preferenceRank: 1n, count: 2 },
       { labId: 'lab-a', preferenceRank: null, count: 1 },
@@ -499,7 +499,7 @@ describe('buildLotteryAggregate', () => {
     ]);
   });
 
-  it('sorts buckets numerically by rank across all stacks, with null last', () => {
+  test('sorts buckets numerically by rank across all stacks, with null last', () => {
     // lab-a has only rank 3; lab-b has only rank 1 — allRankedRanks must be [1,3] globally
     const rows = [
       { labId: 'lab-a', preferenceRank: 3n, count: 2 },
@@ -515,7 +515,7 @@ describe('buildLotteryAggregate', () => {
     ]);
   });
 
-  it('falls back to labId as lab name when lab is absent from the labs list', () => {
+  test('falls back to labId as lab name when lab is absent from the labs list', () => {
     const result = buildLotteryAggregate(
       [{ labId: 'unknown', preferenceRank: 1n, count: 1 }],
       LABS,
