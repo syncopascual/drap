@@ -5,16 +5,20 @@
   import DataTable from '$lib/features/drafts/draftees/data-table.svelte';
   import Empty from '$lib/components/empty.svelte';
   import { createFetchDrafteesQuery } from '$lib/queries/fetch-draftees';
+  import type { Lab } from '$lib/features/drafts/types';
 
   export interface Props {
     draftId: string;
+    lab: Lab;
     children?: Snippet;
   }
 
-  const { draftId, children }: Props = $props();
+  const { draftId, lab, children }: Props = $props();
 
   const query = $derived(
-    createFetchDrafteesQuery(draftId, students => students.filter(({ labId }) => labId !== null)),
+    createFetchDrafteesQuery(draftId, students =>
+      students.filter(student => student.labId === lab.id),
+    ),
   );
 </script>
 
