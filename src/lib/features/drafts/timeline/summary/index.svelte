@@ -48,12 +48,15 @@
       </Alert.Description>
     </Alert.Root>
   {:else}
-    <Alert.Root variant="success">
+    <Alert.Root variant="success" class="grid-cols-[auto_1fr_auto] items-center gap-x-3">
       <CheckCircle2Icon class="text-success" />
       <Alert.Title>Draft Finalized</Alert.Title>
       <Alert.Description>
         This draft has been completed. All students have been assigned to their respective labs.
       </Alert.Description>
+      <div class="col-start-2 mt-2 sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:mt-0">
+        <DraftAssignments {draftId} maxRounds={draft.maxRounds} />
+      </div>
     </Alert.Root>
   {/if}
   <div class="grid w-fit grid-cols-1 gap-2 sm:grid-cols-[repeat(2,minmax(10rem,14rem))]">
@@ -82,5 +85,4 @@
       <PreferenceAlignmentChart data={draftSummaryChartData.preferenceAlignment} />
     </div>
   </div>
-  <DraftAssignments {draftId} maxRounds={draft.maxRounds} />
 </div>

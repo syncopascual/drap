@@ -4,14 +4,16 @@
 
   import * as Card from '$lib/components/ui/card';
   import * as Chart from '$lib/components/ui/chart';
+  import DraftedDraftees from '$lib/features/drafts/draftees/drafted/index.svelte';
   import { assert } from '$lib/assert';
   import type { DumbbellRow } from '$lib/features/drafts/types';
 
   interface Props {
+    draftId: string;
     rows: DumbbellRow[];
   }
 
-  const { rows }: Props = $props();
+  const { draftId, rows }: Props = $props();
 
   const integerFormat = format('d');
   const signedFormat = format('+d');
@@ -56,12 +58,16 @@
 <Card.Root
   class="overflow-hidden border-border/60 bg-linear-to-br from-muted/40 via-background to-muted/10 shadow-xs"
 >
-  <Card.Header>
-    <Card.Title>Natural Leftover vs. Lottery Quota</Card.Title>
-    <Card.Description>
-      Per-lab gap between the "do nothing" baseline and the allocated lottery quota. Amber = seats
-      added; muted = seats removed.
-    </Card.Description>
+  <Card.Header class="gap-3">
+    <div class="flex flex-wrap items-start justify-between gap-2">
+      <div class="space-y-1">
+        <Card.Title>Natural Leftover vs. Lottery Quota</Card.Title>
+        <Card.Description>
+          Per-lab gap between the "do nothing" baseline and the allocated lottery quota.
+        </Card.Description>
+      </div>
+      <DraftedDraftees {draftId} triggerSize="sm" />
+    </div>
   </Card.Header>
   <Card.Content>
     {#if rows.length === 0}

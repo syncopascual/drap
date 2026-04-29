@@ -1,5 +1,4 @@
 <script lang="ts">
-  import DraftedDraftees from '$lib/features/drafts/draftees/drafted/index.svelte';
   import type { LotteryAggregate } from '$lib/features/drafts/types';
 
   import FinalizeForm from './finalize-form.svelte';
@@ -34,15 +33,9 @@
         Lottery assignment has completed. Review the results below. When ready, finalize to dispatch
         emails and synchronize official student lab assignments.
       </p>
-      <div class="mb-6 flex justify-center">
-        <DraftedDraftees {draftId} />
-      </div>
       <FinalizeForm {draftId} />
     {:else}
       <p>The lottery phase has completed. Review the results below.</p>
-      <div class="flex justify-center">
-        <DraftedDraftees {draftId} />
-      </div>
     {/if}
   </div>
 </div>

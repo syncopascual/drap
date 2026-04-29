@@ -1,6 +1,5 @@
 <script lang="ts">
   import ConcludeForm from '$lib/features/drafts/timeline/lottery/conclude-form.svelte';
-  import DraftedDraftees from '$lib/features/drafts/draftees/drafted/index.svelte';
   import LotterySection from '$lib/features/drafts/timeline/lottery/lottery-section/index.svelte';
   import type {
     DraftLabQuotaSnapshot,
@@ -24,7 +23,7 @@
 
 <div class="@container space-y-4">
   <StatCards data={interventionsAggregate.statCards} {isHistorical} />
-  <QuotaDumbbellChart rows={interventionsAggregate.dumbbellRows} />
+  <QuotaDumbbellChart {draftId} rows={interventionsAggregate.dumbbellRows} />
 
   {#if !isHistorical}
     <div class="prose dark:prose-invert">
@@ -48,10 +47,6 @@
           Meanwhile, the <strong>"Already Drafted"</strong> section features an <em>immutable</em>
           list of students who have already been drafted into their respective labs. These are considered
           final.
-
-          <div class="flex justify-center">
-            <DraftedDraftees {draftId} />
-          </div>
         </li>
       </ul>
       <p>

@@ -1,19 +1,33 @@
 <script lang="ts">
+  import GraduationCapIcon from '@lucide/svelte/icons/graduation-cap';
+
   import * as Sheet from '$lib/components/ui/sheet';
-  import { Button } from '$lib/components/ui/button';
+  import { Button, type ButtonSize } from '$lib/components/ui/button';
 
   import Loader, { type Props } from './loader.svelte';
 
-  const loaderProps: Props = $props();
+  interface TriggerProps extends Props {
+    triggerSize?: ButtonSize;
+  }
+
+  const { triggerSize = 'default', ...loaderProps }: TriggerProps = $props();
 </script>
 
 <Sheet.Root>
   <Sheet.Trigger>
     {#snippet child({ props })}
       {#if typeof loaderProps.lab === 'undefined'}
-        <Button variant="outline" class="border-primary text-primary" {...props}
-          >Already Drafted</Button
+        <Button
+          variant="outline"
+          size={triggerSize}
+          class={triggerSize === 'default' ? 'border-primary text-primary' : void 0}
+          {...props}
         >
+          {#if triggerSize === 'sm'}
+            <GraduationCapIcon class="size-4" />
+          {/if}
+          <span>{triggerSize === 'sm' ? 'See Drafted' : 'Already Drafted'}</span>
+        </Button>
       {:else}
         <Button
           variant="outline"
