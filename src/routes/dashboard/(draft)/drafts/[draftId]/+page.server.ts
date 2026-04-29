@@ -30,6 +30,11 @@ import {
   RoundStartedBatchEmailEvent,
   UserAssignedBatchEmailEvent,
 } from '$lib/server/inngest/schema';
+import {
+  getDraftPhase,
+  isInterventionsRendered,
+  isLotteryRendered,
+} from '$lib/features/drafts/phase';
 import { inngest } from '$lib/server/inngest/client';
 import { Logger } from '$lib/server/telemetry/logger';
 import { Tracer } from '$lib/server/telemetry/tracer';
@@ -39,6 +44,8 @@ import {
   buildDraftSummaryChartData,
   buildInterventionsAggregate,
   buildLotteryAggregate,
+  EMPTY_INTERVENTIONS_AGGREGATE,
+  EMPTY_LOTTERY_AGGREGATE,
 } from './assignment-summary';
 
 const enum AllowlistAddResult {
@@ -97,6 +104,9 @@ export async function load({ params, locals: { session } }) {
       error(404);
     }
 
+    const phase = getDraftPhase(draft);
+    const needsLotteryRows = isLotteryRendered(phase);
+
     const {
       studentCount,
       quotaSnapshots,
@@ -118,7 +128,7 @@ export async function load({ params, locals: { session } }) {
         assignmentCountsByAttribute: await getDraftAssignmentCountsByAttribute(db, draftId),
         bordaScores: await getLabDemandBordaScores(db, draftId),
         alignmentRows: await getDraftPreferenceAlignment(db, draftId),
-        lotteryOutcomeRows: await getLotteryOutcomePerLab(db, draftId),
+        lotteryOutcomeRows: needsLotteryRows ? await getLotteryOutcomePerLab(db, draftId) : [],
       }),
       { isolationLevel: 'repeatable read' },
     );
@@ -150,13 +160,13 @@ export async function load({ params, locals: { session } }) {
       studentCount,
     );
 
-    const interventionsAggregate = buildInterventionsAggregate(
-      studentCount,
-      assignmentCountsByAttribute,
-      quotaSnapshots,
-    );
+    const interventionsAggregate = isInterventionsRendered(phase)
+      ? buildInterventionsAggregate(studentCount, assignmentCountsByAttribute, quotaSnapshots)
+      : EMPTY_INTERVENTIONS_AGGREGATE;
 
-    const lotteryAggregate = buildLotteryAggregate(lotteryOutcomeRows, labs);
+    const lotteryAggregate = needsLotteryRows
+      ? buildLotteryAggregate(lotteryOutcomeRows, labs)
+      : EMPTY_LOTTERY_AGGREGATE;
 
     return {
       draftId,

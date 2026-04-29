@@ -166,6 +166,8 @@ export interface LotteryOutcomeRow {
 }
 
 export interface LotteryOutcomeBucket {
+  /** Preference rank (1-based), or `null` for "Not Preferred" placements. */
+  rank: number | null;
   label: string;
   count: number;
 }

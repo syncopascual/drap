@@ -13,6 +13,7 @@ import type {
   InterventionsAggregate,
   Lab,
   LotteryAggregate,
+  LotteryOutcomeBucket,
   LotteryOutcomeRow,
 } from '$lib/features/drafts/types';
 
@@ -271,7 +272,8 @@ export function buildLotteryAggregate(
   let rankedLab = 0;
   let unranked = 0;
 
-  const labBuckets = new Map<string, Map<string, number>>();
+  // Keyed by numeric rank (or null for "Not Preferred") so sorting never touches label strings.
+  const labBuckets = new Map<string, Map<number | null, { label: string; count: number }>>();
   const rankCounts = new Map<number, number>();
   let rankedN = 0;
 
@@ -282,13 +284,15 @@ export function buildLotteryAggregate(
 
     if (preferenceRank === null) {
       unranked += count;
-      lb.set('Not Preferred', (lb.get('Not Preferred') ?? 0) + count);
+      const existing = lb.get(null);
+      lb.set(null, { label: 'Not Preferred', count: (existing?.count ?? 0) + count });
     } else {
       const rank = Number(preferenceRank);
       rankedLab += count;
       if (rank === 1) topChoice += count;
       const label = ordinalChoice(rank);
-      lb.set(label, (lb.get(label) ?? 0) + count);
+      const existing = lb.get(rank);
+      lb.set(rank, { label, count: (existing?.count ?? 0) + count });
       rankCounts.set(rank, (rankCounts.get(rank) ?? 0) + count);
       rankedN += count;
     }
@@ -308,28 +312,26 @@ export function buildLotteryAggregate(
     }
   }
 
-  const allRankedLabels = Array.from(
+  const allRankedRanks = Array.from(
     new Set(
       Array.from(labBuckets.values()).flatMap(m =>
-        Array.from(m.keys()).filter(k => k !== 'Not Preferred'),
+        Array.from(m.keys()).filter((k): k is number => k !== null),
       ),
     ),
-  ).sort((a, b) => {
-    const numA = parseInt(a, 10);
-    const numB = parseInt(b, 10);
-    return numA - numB;
-  });
+  ).sort((a, b) => a - b);
 
   const outcomeStacks = Array.from(labBuckets.entries())
     .map(([labId, buckets]) => {
-      const total = Array.from(buckets.values()).reduce((s, c) => s + c, 0);
-      const ordered: { label: string; count: number }[] = [];
-      for (const label of allRankedLabels) {
-        const cnt = buckets.get(label) ?? 0;
-        if (cnt > 0) ordered.push({ label, count: cnt });
+      const total = Array.from(buckets.values()).reduce((s, { count }) => s + count, 0);
+      const ordered: LotteryOutcomeBucket[] = [];
+      for (const rank of allRankedRanks) {
+        const entry = buckets.get(rank);
+        if (entry && entry.count > 0)
+          ordered.push({ rank, label: entry.label, count: entry.count });
       }
-      const notPreferred = buckets.get('Not Preferred') ?? 0;
-      if (notPreferred > 0) ordered.push({ label: 'Not Preferred', count: notPreferred });
+      const notPreferred = buckets.get(null);
+      if (notPreferred && notPreferred.count > 0)
+        ordered.push({ rank: null, label: 'Not Preferred', count: notPreferred.count });
       return { labId, labName: labNameById.get(labId) ?? labId, buckets: ordered, total };
     })
     .sort((a, b) => a.labName.localeCompare(b.labName));
@@ -339,6 +341,22 @@ export function buildLotteryAggregate(
     outcomeStacks,
   };
 }
+
+export const EMPTY_INTERVENTIONS_AGGREGATE: InterventionsAggregate = {
+  statCards: { poolSize: 0, totalLotteryQuota: 0, delta: 0 },
+  dumbbellRows: [],
+};
+
+export const EMPTY_LOTTERY_AGGREGATE: LotteryAggregate = {
+  statCards: {
+    poolSize: 0,
+    topChoice: 0,
+    rankedLab: 0,
+    unranked: 0,
+    medianRankHonored: null,
+  },
+  outcomeStacks: [],
+};
 
 export function buildDraftSummaryChartData(
   assignmentCounts: DraftAssignmentCountByAttribute[],

@@ -13,6 +13,7 @@
     Lab,
     LotteryAggregate,
   } from '$lib/features/drafts/types';
+  import { type DraftPhase as Phase, getDraftPhase } from '$lib/features/drafts/phase';
   import { resolve } from '$app/paths';
 
   import Step, { type Status } from './step.svelte';
@@ -24,14 +25,6 @@
   import RegistrationCompleted from './registration/completed.svelte';
   import RegularPhase from './regular/index.svelte';
   import SummaryPhase from './summary/index.svelte';
-
-  type Phase =
-    | 'registration'
-    | 'registration-closed'
-    | 'regular'
-    | 'intervention'
-    | 'review'
-    | 'finalized';
 
   interface TimelineData {
     createdAt: Date;
@@ -71,14 +64,7 @@
   const draftId = $derived(rawDraftId.toString());
 
   // Determine current phase
-  const currentPhase = $derived.by(() => {
-    if (draft.activePeriodEnd !== null) return 'finalized';
-    if (draft.currRound === null) return 'review';
-    if (draft.currRound === 0)
-      return draft.isRegistrationClosed ? 'registration-closed' : 'registration';
-    if (draft.currRound > draft.maxRounds) return 'intervention';
-    return 'regular';
-  });
+  const currentPhase = $derived(getDraftPhase(draft));
 
   // Phase labels for display
   function getPhaseLabel(phase: Phase) {
@@ -126,12 +112,11 @@
     }
   });
 
-  const interventionsStatus: Status = $derived.by(() => {
-    switch (currentPhase) {
-      case 'registration':
-      case 'registration-closed':
-      case 'regular':
-        return 'pending';
+  type InterventionsRenderedPhase = 'intervention' | 'review' | 'finalized';
+  type LotteryRenderedPhase = 'review' | 'finalized';
+
+  function interventionsStatusFor(phase: InterventionsRenderedPhase): Status {
+    switch (phase) {
       case 'intervention':
         return 'active';
       case 'review':
@@ -140,15 +125,10 @@
       default:
         throw new Error('unreachable');
     }
-  });
+  }
 
-  const lotteryStatus: Status = $derived.by(() => {
-    switch (currentPhase) {
-      case 'registration':
-      case 'registration-closed':
-      case 'regular':
-      case 'intervention':
-        return 'pending';
+  function lotteryStatusFor(phase: LotteryRenderedPhase): Status {
+    switch (phase) {
       case 'review':
         return 'active';
       case 'finalized':
@@ -156,9 +136,11 @@
       default:
         throw new Error('unreachable');
     }
-  });
+  }
 
-  const lotteryStepTitle = $derived(currentPhase === 'review' ? 'Review' : 'Lottery');
+  function lotteryStepTitleFor(phase: LotteryRenderedPhase): string {
+    return phase === 'review' ? 'Review' : 'Lottery';
+  }
 </script>
 
 <div class="space-y-6">
@@ -232,7 +214,11 @@
 
     <!-- Lottery: post-intervention only (review + finalized) -->
     {#if currentPhase === 'review' || currentPhase === 'finalized'}
-      <Step title={lotteryStepTitle} status={lotteryStatus} open={currentPhase === 'review'}>
+      <Step
+        title={lotteryStepTitleFor(currentPhase)}
+        status={lotteryStatusFor(currentPhase)}
+        open={currentPhase === 'review'}
+      >
         <LotteryCompleted {draftId} isReview={currentPhase === 'review'} {lotteryAggregate} />
       </Step>
     {/if}
@@ -241,7 +227,7 @@
     {#if currentPhase === 'intervention' || currentPhase === 'review' || currentPhase === 'finalized'}
       <Step
         title="Interventions"
-        status={interventionsStatus}
+        status={interventionsStatusFor(currentPhase)}
         open={currentPhase === 'intervention'}
       >
         <InterventionsActive

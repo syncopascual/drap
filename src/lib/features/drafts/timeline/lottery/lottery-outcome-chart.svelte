@@ -16,13 +16,18 @@
 
   const NOT_PREFERRED = 'Not Preferred';
 
-  const allLabels = $derived(
-    Array.from(new Set(stacks.flatMap(s => s.buckets.map(b => b.label)))).sort((a, b) => {
-      if (a === NOT_PREFERRED) return 1;
-      if (b === NOT_PREFERRED) return -1;
-      return parseInt(a, 10) - parseInt(b, 10);
+  // Dedupe by rank across all stacks, sort numerically (null → "Not Preferred" goes last).
+  const allBucketsMeta = $derived(
+    Array.from(
+      new Map(stacks.flatMap(s => s.buckets.map(b => [b.rank, b.label] as const))).entries(),
+    ).sort(([a], [b]) => {
+      if (a === null) return 1;
+      if (b === null) return -1;
+      return a - b;
     }),
   );
+
+  const allLabels = $derived(allBucketsMeta.map(([, label]) => label));
 
   function labelColor(label: string, i: number): string {
     if (label === NOT_PREFERRED) return 'var(--muted-foreground)';
@@ -69,43 +74,47 @@
     </Card.Description>
   </Card.Header>
   <Card.Content>
-    <Chart.Container id="lottery-outcome-chart" config={chartConfig} class="max-h-[400px] w-full">
-      <BarChart
-        data={chartData}
-        x="lab"
-        series={chartSeries}
-        seriesLayout="stack"
-        legend
-        grid
-        groupPadding={0.15}
-        bandPadding={0.25}
-        props={{
-          xAxis: {
-            grid: false,
-            tickLabelProps: { dy: 8 },
-          },
-          yAxis: {
-            ticks: 4,
-            format: (value: number) => integerFormat(value),
-            tickLabelProps: { dx: -8 },
-          },
-        }}
-      >
-        {#snippet tooltip()}
-          <Chart.Tooltip
-            indicator="dot"
-            labelAccessor={d => {
-              assert(typeof d === 'object' && d !== null && 'lab' in d);
-              return d.lab;
-            }}
-            labelFormatter={value => {
-              assert(typeof value === 'string');
-              return labNameById.get(value) ?? value;
-            }}
-            valueFormatter={value => integerFormat(Number(value))}
-          />
-        {/snippet}
-      </BarChart>
-    </Chart.Container>
+    {#if stacks.length === 0}
+      <p class="text-sm text-muted-foreground">No lottery placements available.</p>
+    {:else}
+      <Chart.Container id="lottery-outcome-chart" config={chartConfig} class="max-h-[400px] w-full">
+        <BarChart
+          data={chartData}
+          x="lab"
+          series={chartSeries}
+          seriesLayout="stack"
+          legend
+          grid
+          groupPadding={0.15}
+          bandPadding={0.25}
+          props={{
+            xAxis: {
+              grid: false,
+              tickLabelProps: { dy: 8 },
+            },
+            yAxis: {
+              ticks: 4,
+              format: (value: number) => integerFormat(value),
+              tickLabelProps: { dx: -8 },
+            },
+          }}
+        >
+          {#snippet tooltip()}
+            <Chart.Tooltip
+              indicator="dot"
+              labelAccessor={d => {
+                assert(typeof d === 'object' && d !== null && 'lab' in d);
+                return d.lab;
+              }}
+              labelFormatter={value => {
+                assert(typeof value === 'string');
+                return labNameById.get(value) ?? value;
+              }}
+              valueFormatter={value => integerFormat(Number(value))}
+            />
+          {/snippet}
+        </BarChart>
+      </Chart.Container>
+    {/if}
   </Card.Content>
 </Card.Root>
