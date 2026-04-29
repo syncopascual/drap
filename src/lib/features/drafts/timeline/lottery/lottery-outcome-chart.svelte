@@ -16,8 +16,6 @@
 
   const { stacks }: Props = $props();
 
-  const NOT_PREFERRED = 'Not Preferred';
-
   // Dedupe by rank across all stacks, sort numerically (null → "Not Preferred" goes last).
   const allBucketsMeta = $derived(
     Array.from(
@@ -30,7 +28,7 @@
   );
 
   function labelColor(label: string, i: number): string {
-    if (label === NOT_PREFERRED) return 'var(--muted-foreground)';
+    if (label === 'Not Preferred') return 'var(--muted-foreground)';
     const color = CHART_COLORS[i % CHART_COLORS.length];
     assert(typeof color === 'string', 'chart color index out of bounds');
     return color;

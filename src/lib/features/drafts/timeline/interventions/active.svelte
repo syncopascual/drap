@@ -24,7 +24,6 @@
 <div class="@container space-y-4">
   <StatCards data={interventionsAggregate.statCards} {isHistorical} />
   <QuotaDumbbellChart {draftId} rows={interventionsAggregate.dumbbellRows} />
-
   {#if !isHistorical}
     <div class="prose dark:prose-invert">
       <h3>Interventions Phase</h3>
@@ -58,7 +57,6 @@
         After randomization, the draft enters <strong>Review</strong>. Administrators can inspect
         results before finalization, email dispatch, and official lab assignment.
       </p>
-
       <ConcludeForm {draftId} />
     </div>
   {/if}

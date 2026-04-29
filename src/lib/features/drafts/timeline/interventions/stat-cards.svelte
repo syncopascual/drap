@@ -27,7 +27,6 @@
     {/snippet}
     {#snippet subtitle()}Students Eligible for Lottery{/snippet}
   </StatCard>
-
   <StatCard icon={ActivityIcon}>
     {#snippet title()}Lottery Quotas{/snippet}
     {#snippet body()}
@@ -37,7 +36,6 @@
     {/snippet}
     {#snippet subtitle()}Total Seats Allocated{/snippet}
   </StatCard>
-
   {#if !isHistorical}
     <StatCard icon={ScaleIcon}>
       {#snippet title()}Delta{/snippet}
