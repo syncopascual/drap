@@ -5,8 +5,9 @@
   import ThumbsDownIcon from '@lucide/svelte/icons/thumbs-down';
   import ThumbsUpIcon from '@lucide/svelte/icons/thumbs-up';
 
-  import * as Card from '$lib/components/ui/card';
   import type { LotteryStatCards } from '$lib/features/drafts/types';
+
+  import StatCard from '../stat-card.svelte';
 
   interface Props {
     data: LotteryStatCards;
@@ -19,59 +20,44 @@
   );
 </script>
 
-<div class="flex flex-wrap gap-2">
-  <Card.Root variant="soft" class="preset-tonal-muted max-w-56 min-w-40 flex-1 gap-2 py-4">
-    <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-0">
-      <Card.Title class="text-sm font-medium">Pool Size</Card.Title>
-      <LayersIcon class="size-4 text-muted-foreground" />
-    </Card.Header>
-    <Card.Content>
+<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+  <StatCard icon={LayersIcon}>
+    {#snippet title()}Pool Size{/snippet}
+    {#snippet body()}
       <p id="stat-lottery-pool" class="text-2xl font-bold tabular-nums">{data.poolSize}</p>
-      <p class="text-xs text-muted-foreground">Lottery-Placed Students</p>
-    </Card.Content>
-  </Card.Root>
+    {/snippet}
+    {#snippet subtitle()}Lottery-Placed Students{/snippet}
+  </StatCard>
 
-  <Card.Root variant="soft" class="preset-tonal-muted max-w-56 min-w-40 flex-1 gap-2 py-4">
-    <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-0">
-      <Card.Title class="text-sm font-medium">Top-Choice Placements</Card.Title>
-      <StarIcon class="size-4 text-muted-foreground" />
-    </Card.Header>
-    <Card.Content>
+  <StatCard icon={StarIcon}>
+    {#snippet title()}Top-Choice Placements{/snippet}
+    {#snippet body()}
       <p id="stat-lottery-top" class="text-2xl font-bold tabular-nums">{data.topChoice}</p>
-      <p class="text-xs text-muted-foreground">Placed in 1st-Ranked Lab</p>
-    </Card.Content>
-  </Card.Root>
+    {/snippet}
+    {#snippet subtitle()}Placed in 1st-Ranked Lab{/snippet}
+  </StatCard>
 
-  <Card.Root variant="soft" class="preset-tonal-muted max-w-56 min-w-40 flex-1 gap-2 py-4">
-    <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-0">
-      <Card.Title class="text-sm font-medium">Ranked-Lab Placements</Card.Title>
-      <ThumbsUpIcon class="size-4 text-muted-foreground" />
-    </Card.Header>
-    <Card.Content>
+  <StatCard icon={ThumbsUpIcon}>
+    {#snippet title()}Ranked-Lab Placements{/snippet}
+    {#snippet body()}
       <p id="stat-lottery-ranked" class="text-2xl font-bold tabular-nums">{data.rankedLab}</p>
-      <p class="text-xs text-muted-foreground">Placed in a Lab They Ranked</p>
-    </Card.Content>
-  </Card.Root>
+    {/snippet}
+    {#snippet subtitle()}Placed in a Lab They Ranked{/snippet}
+  </StatCard>
 
-  <Card.Root variant="soft" class="preset-tonal-muted max-w-56 min-w-40 flex-1 gap-2 py-4">
-    <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-0">
-      <Card.Title class="text-sm font-medium">Unranked Placements</Card.Title>
-      <ThumbsDownIcon class="size-4 text-muted-foreground" />
-    </Card.Header>
-    <Card.Content>
+  <StatCard icon={ThumbsDownIcon}>
+    {#snippet title()}Unranked Placements{/snippet}
+    {#snippet body()}
       <p id="stat-lottery-unranked" class="text-2xl font-bold tabular-nums">{data.unranked}</p>
-      <p class="text-xs text-muted-foreground">Placed in an Unranked Lab</p>
-    </Card.Content>
-  </Card.Root>
+    {/snippet}
+    {#snippet subtitle()}Placed in an Unranked Lab{/snippet}
+  </StatCard>
 
-  <Card.Root variant="soft" class="preset-tonal-muted max-w-56 min-w-40 flex-1 gap-2 py-4">
-    <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-0">
-      <Card.Title class="text-sm font-medium">Median Rank Honored</Card.Title>
-      <ActivityIcon class="size-4 text-muted-foreground" />
-    </Card.Header>
-    <Card.Content>
+  <StatCard icon={ActivityIcon}>
+    {#snippet title()}Median Rank Honored{/snippet}
+    {#snippet body()}
       <p id="stat-lottery-median" class="text-2xl font-bold tabular-nums">{medianLabel}</p>
-      <p class="text-xs text-muted-foreground">Among Ranked Placements</p>
-    </Card.Content>
-  </Card.Root>
+    {/snippet}
+    {#snippet subtitle()}Among Ranked Placements{/snippet}
+  </StatCard>
 </div>
