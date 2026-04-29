@@ -1,28 +1,42 @@
 import type { Draft } from './types';
 
-export type DraftPhase =
-  | 'registration'
-  | 'registration-closed'
-  | 'regular'
-  | 'intervention'
-  | 'review'
-  | 'finalized';
+export const enum DraftPhase {
+  Registration = 'registration',
+  RegistrationClosed = 'registration-closed',
+  Regular = 'regular',
+  Intervention = 'intervention',
+  Review = 'review',
+  Finalized = 'finalized',
+}
 
 export function getDraftPhase(
   draft: Pick<Draft, 'activePeriodEnd' | 'currRound' | 'maxRounds' | 'isRegistrationClosed'>,
-): DraftPhase {
-  if (draft.activePeriodEnd !== null) return 'finalized';
-  if (draft.currRound === null) return 'review';
+) {
+  if (draft.activePeriodEnd !== null) return DraftPhase.Finalized;
+  if (draft.currRound === null) return DraftPhase.Review;
   if (draft.currRound === 0)
-    return draft.isRegistrationClosed ? 'registration-closed' : 'registration';
-  if (draft.currRound > draft.maxRounds) return 'intervention';
-  return 'regular';
+    return draft.isRegistrationClosed ? DraftPhase.RegistrationClosed : DraftPhase.Registration;
+  if (draft.currRound > draft.maxRounds) return DraftPhase.Intervention;
+  return DraftPhase.Regular;
 }
 
-export function isInterventionsRendered(phase: DraftPhase): boolean {
-  return phase === 'intervention' || phase === 'review' || phase === 'finalized';
+export function isInterventionsRendered(phase: DraftPhase) {
+  switch (phase) {
+    case DraftPhase.Intervention:
+    case DraftPhase.Review:
+    case DraftPhase.Finalized:
+      return true;
+    default:
+      return false;
+  }
 }
 
-export function isLotteryRendered(phase: DraftPhase): boolean {
-  return phase === 'review' || phase === 'finalized';
+export function isLotteryRendered(phase: DraftPhase) {
+  switch (phase) {
+    case DraftPhase.Review:
+    case DraftPhase.Finalized:
+      return true;
+    default:
+      return false;
+  }
 }

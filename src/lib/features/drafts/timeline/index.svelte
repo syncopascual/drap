@@ -13,7 +13,7 @@
     Lab,
     LotteryAggregate,
   } from '$lib/features/drafts/types';
-  import { type DraftPhase as Phase, getDraftPhase } from '$lib/features/drafts/phase';
+  import { DraftPhase, getDraftPhase } from '$lib/features/drafts/phase';
   import { resolve } from '$app/paths';
 
   import Step, { type Status } from './step.svelte';
@@ -67,18 +67,18 @@
   const currentPhase = $derived(getDraftPhase(draft));
 
   // Phase labels for display
-  function getPhaseLabel(phase: Phase) {
+  function getPhaseLabel(phase: DraftPhase) {
     switch (phase) {
-      case 'registration':
-      case 'registration-closed':
+      case DraftPhase.Registration:
+      case DraftPhase.RegistrationClosed:
         return 'Registration';
-      case 'regular':
+      case DraftPhase.Regular:
         return `Round ${draft.currRound} of ${draft.maxRounds}` as const;
-      case 'intervention':
+      case DraftPhase.Intervention:
         return 'Interventions';
-      case 'review':
+      case DraftPhase.Review:
         return 'Review';
-      case 'finalized':
+      case DraftPhase.Finalized:
         return 'Finalized';
       default:
         throw new Error('unreachable');
@@ -86,60 +86,63 @@
   }
 
   // Status per phase
-  const registrationStatus: Status = $derived.by(() => {
+  const registrationStatus = $derived.by(() => {
     switch (currentPhase) {
-      case 'registration':
-      case 'registration-closed':
+      case DraftPhase.Registration:
+      case DraftPhase.RegistrationClosed:
         return 'active';
       default:
         return 'completed';
     }
   });
 
-  const regularStatus: Status = $derived.by(() => {
+  const regularStatus = $derived.by(() => {
     switch (currentPhase) {
-      case 'regular':
+      case DraftPhase.Regular:
         return 'active';
-      case 'registration':
-      case 'registration-closed':
+      case DraftPhase.Registration:
+      case DraftPhase.RegistrationClosed:
         return 'pending';
-      case 'intervention':
-      case 'review':
-      case 'finalized':
+      case DraftPhase.Intervention:
+      case DraftPhase.Review:
+      case DraftPhase.Finalized:
         return 'completed';
       default:
         throw new Error('unreachable');
     }
   });
 
-  type InterventionsRenderedPhase = 'intervention' | 'review' | 'finalized';
-  type LotteryRenderedPhase = 'review' | 'finalized';
+  type InterventionsRenderedPhase =
+    | DraftPhase.Intervention
+    | DraftPhase.Review
+    | DraftPhase.Finalized;
+  type LotteryRenderedPhase = DraftPhase.Review | DraftPhase.Finalized;
 
-  function interventionsStatusFor(phase: InterventionsRenderedPhase): Status {
+  function interventionsStatusFor(phase: InterventionsRenderedPhase) {
     switch (phase) {
-      case 'intervention':
+      case DraftPhase.Intervention:
         return 'active';
-      case 'review':
-      case 'finalized':
+      case DraftPhase.Review:
+      case DraftPhase.Finalized:
         return 'completed';
       default:
         throw new Error('unreachable');
     }
   }
 
-  function lotteryStatusFor(phase: LotteryRenderedPhase): Status {
+  function lotteryStatusFor(phase: LotteryRenderedPhase) {
     switch (phase) {
-      case 'review':
+      case DraftPhase.Review:
         return 'active';
-      case 'finalized':
+      case DraftPhase.Finalized:
         return 'completed';
       default:
         throw new Error('unreachable');
     }
   }
 
-  function lotteryStepTitleFor(phase: LotteryRenderedPhase): string {
-    return phase === 'review' ? 'Review' : 'Lottery';
+  function lotteryStepTitleFor(phase: LotteryRenderedPhase) {
+    return phase === DraftPhase.Review ? 'Review' : 'Lottery';
   }
 </script>
 
@@ -155,7 +158,7 @@
         Started {format(draft.activePeriodStart, 'PPP')} &middot; {getPhaseLabel(currentPhase)}
       </p>
     </div>
-    {#if currentPhase !== 'registration' && currentPhase !== 'registration-closed'}
+    {#if currentPhase !== DraftPhase.Registration && currentPhase !== DraftPhase.RegistrationClosed}
       <div class="flex flex-wrap gap-2 *:w-full min-[24rem]:*:w-min">
         <Button
           href={resolve(`/dashboard/drafts/${draftId}/students.csv`)}
@@ -191,7 +194,7 @@
   <!-- Timeline (reverse chronological: newest at top) -->
   <div class="pl-1">
     <!-- Summary (visible in review and finalized phases) -->
-    {#if currentPhase === 'review' || currentPhase === 'finalized'}
+    {#if currentPhase === DraftPhase.Review || currentPhase === DraftPhase.Finalized}
       <Step title="Summary" status="active" collapsible={false}>
         {#snippet metadata()}
           {#if draft.activePeriodEnd !== null}
@@ -207,42 +210,50 @@
           totalStudents={studentCount}
           {assignmentSummary}
           {draftSummaryChartData}
-          isReview={currentPhase === 'review'}
+          isReview={currentPhase === DraftPhase.Review}
         />
       </Step>
     {/if}
 
     <!-- Lottery: post-intervention only (review + finalized) -->
-    {#if currentPhase === 'review' || currentPhase === 'finalized'}
+    {#if currentPhase === DraftPhase.Review || currentPhase === DraftPhase.Finalized}
       <Step
         title={lotteryStepTitleFor(currentPhase)}
         status={lotteryStatusFor(currentPhase)}
-        open={currentPhase === 'review'}
+        open={currentPhase === DraftPhase.Review}
       >
-        <LotteryCompleted {draftId} isReview={currentPhase === 'review'} {lotteryAggregate} />
+        <LotteryCompleted
+          {draftId}
+          isReview={currentPhase === DraftPhase.Review}
+          {lotteryAggregate}
+        />
       </Step>
     {/if}
 
     <!-- Interventions: active during intervention phase, historical after -->
-    {#if currentPhase === 'intervention' || currentPhase === 'review' || currentPhase === 'finalized'}
+    {#if currentPhase === DraftPhase.Intervention || currentPhase === DraftPhase.Review || currentPhase === DraftPhase.Finalized}
       <Step
         title="Interventions"
         status={interventionsStatusFor(currentPhase)}
-        open={currentPhase === 'intervention'}
+        open={currentPhase === DraftPhase.Intervention}
       >
         <InterventionsActive
           {draftId}
           {labs}
           {snapshots}
           {interventionsAggregate}
-          isHistorical={currentPhase !== 'intervention'}
+          isHistorical={currentPhase !== DraftPhase.Intervention}
         />
       </Step>
     {/if}
 
     <!-- Regular Rounds -->
-    {#if currentPhase !== 'registration' && currentPhase !== 'registration-closed'}
-      <Step title="Regular Rounds" status={regularStatus} open={currentPhase === 'regular'}>
+    {#if currentPhase !== DraftPhase.Registration && currentPhase !== DraftPhase.RegistrationClosed}
+      <Step
+        title="Regular Rounds"
+        status={regularStatus}
+        open={currentPhase === DraftPhase.Regular}
+      >
         {#snippet metadata()}
           <span class="text-sm text-muted-foreground">
             {draft.currRound === null
@@ -259,7 +270,7 @@
             {assignmentSummary}
             showUndrafted
           />
-        {:else if currentPhase === 'review' || currentPhase === 'finalized'}
+        {:else if currentPhase === DraftPhase.Review || currentPhase === DraftPhase.Finalized}
           <RegularPhase
             {draftId}
             {requestedAt}
@@ -280,15 +291,16 @@
     <Step
       title="Registration"
       status={registrationStatus}
-      open={currentPhase === 'registration' || currentPhase === 'registration-closed'}
+      open={currentPhase === DraftPhase.Registration ||
+        currentPhase === DraftPhase.RegistrationClosed}
       last
     >
       {#snippet metadata()}
         <span class="text-sm text-muted-foreground">{studentCount} students</span>
       {/snippet}
-      {#if currentPhase === 'registration'}
+      {#if currentPhase === DraftPhase.Registration}
         <RegistrationActive {draftId} {studentCount} {snapshots} />
-      {:else if currentPhase === 'registration-closed'}
+      {:else if currentPhase === DraftPhase.RegistrationClosed}
         <RegistrationClosed {draftId} {studentCount} {allowlistCount} {snapshots} />
       {:else}
         <RegistrationCompleted
