@@ -6,13 +6,12 @@
 
   import * as Alert from '$lib/components/ui/alert';
   import DraftAssignments from '$lib/features/drafts/assignments/index.svelte';
+  import StatCard from '$lib/features/drafts/timeline/stat-card.svelte';
   import type {
     Draft,
     DraftAssignmentSummary,
     DraftSummaryChartData,
   } from '$lib/features/drafts/types';
-
-  import StatCard from '../stat-card.svelte';
 
   import DraftRoundsChart from './draft-rounds-chart.svelte';
   import LabDistributionChart from './lab-distribution-chart.svelte';

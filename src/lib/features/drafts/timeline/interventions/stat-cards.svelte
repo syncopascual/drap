@@ -3,10 +3,9 @@
   import LayersIcon from '@lucide/svelte/icons/layers';
   import ScaleIcon from '@lucide/svelte/icons/scale';
 
+  import StatCard from '$lib/features/drafts/timeline/stat-card.svelte';
   import { cn } from '$lib/components/ui/utils';
   import type { InterventionsStatCards } from '$lib/features/drafts/types';
-
-  import StatCard from '../stat-card.svelte';
 
   interface Props {
     data: InterventionsStatCards;

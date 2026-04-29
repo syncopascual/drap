@@ -5,9 +5,8 @@
   import ThumbsDownIcon from '@lucide/svelte/icons/thumbs-down';
   import ThumbsUpIcon from '@lucide/svelte/icons/thumbs-up';
 
+  import StatCard from '$lib/features/drafts/timeline/stat-card.svelte';
   import type { LotteryStatCards } from '$lib/features/drafts/types';
-
-  import StatCard from '../stat-card.svelte';
 
   interface Props {
     data: LotteryStatCards;
