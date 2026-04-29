@@ -79,47 +79,43 @@
     </Card.Description>
   </Card.Header>
   <Card.Content>
-    {#if stacks.length === 0}
-      <p class="text-sm text-muted-foreground">No lottery placements available.</p>
-    {:else}
-      <Chart.Container id="lottery-outcome-chart" config={chartConfig} class="max-h-[400px] w-full">
-        <BarChart
-          data={chartData}
-          x="lab"
-          series={chartSeries}
-          seriesLayout="stack"
-          legend
-          grid
-          groupPadding={0.15}
-          bandPadding={0.25}
-          props={{
-            xAxis: {
-              grid: false,
-              tickLabelProps: { dy: 8 },
-            },
-            yAxis: {
-              ticks: 4,
-              format: (value: number) => integerFormat(value),
-              tickLabelProps: { dx: -8 },
-            },
-          }}
-        >
-          {#snippet tooltip()}
-            <Chart.Tooltip
-              indicator="dot"
-              labelAccessor={d => {
-                assert(typeof d === 'object' && d !== null && 'lab' in d);
-                return d.lab;
-              }}
-              labelFormatter={value => {
-                assert(typeof value === 'string');
-                return labNameById.get(value) ?? value;
-              }}
-              valueFormatter={value => integerFormat(Number(value))}
-            />
-          {/snippet}
-        </BarChart>
-      </Chart.Container>
-    {/if}
+    <Chart.Container id="lottery-outcome-chart" config={chartConfig} class="max-h-[400px] w-full">
+      <BarChart
+        data={chartData}
+        x="lab"
+        series={chartSeries}
+        seriesLayout="stack"
+        legend
+        grid
+        groupPadding={0.15}
+        bandPadding={0.25}
+        props={{
+          xAxis: {
+            grid: false,
+            tickLabelProps: { dy: 8 },
+          },
+          yAxis: {
+            ticks: 4,
+            format: (value: number) => integerFormat(value),
+            tickLabelProps: { dx: -8 },
+          },
+        }}
+      >
+        {#snippet tooltip()}
+          <Chart.Tooltip
+            indicator="dot"
+            labelAccessor={d => {
+              assert(typeof d === 'object' && d !== null && 'lab' in d);
+              return d.lab;
+            }}
+            labelFormatter={value => {
+              assert(typeof value === 'string');
+              return labNameById.get(value) ?? value;
+            }}
+            valueFormatter={value => integerFormat(Number(value))}
+          />
+        {/snippet}
+      </BarChart>
+    </Chart.Container>
   </Card.Content>
 </Card.Root>
