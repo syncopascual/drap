@@ -44,8 +44,6 @@ import {
   buildDraftSummaryChartData,
   buildInterventionsAggregate,
   buildLotteryAggregate,
-  EMPTY_INTERVENTIONS_AGGREGATE,
-  EMPTY_LOTTERY_AGGREGATE,
 } from './assignment-summary';
 
 const enum AllowlistAddResult {
@@ -167,11 +165,23 @@ export async function load({ params, locals: { session } }) {
           quotaSnapshots,
           draft.maxRounds,
         )
-      : EMPTY_INTERVENTIONS_AGGREGATE;
+      : {
+          statCards: { poolSize: 0, totalLotteryQuota: 0, delta: 0 },
+          dumbbellRows: [],
+        };
 
     const lotteryAggregate = needsLotteryRows
       ? buildLotteryAggregate(lotteryOutcomeRows, labs)
-      : EMPTY_LOTTERY_AGGREGATE;
+      : {
+          statCards: {
+            poolSize: 0,
+            topChoice: 0,
+            rankedLab: 0,
+            unranked: 0,
+            medianRankHonored: null,
+          },
+          outcomeStacks: [],
+        };
 
     return {
       draftId,

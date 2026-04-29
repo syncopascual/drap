@@ -1,7 +1,6 @@
 import { cumsum, index, max, rollup, sum as d3sum, union } from 'd3-array';
 
 import { assert } from '$lib/assert';
-
 import type {
   DraftAssignmentCountByAttribute,
   DraftAssignmentSummary,
@@ -18,6 +17,7 @@ import type {
   LotteryOutcomeBucket,
   LotteryOutcomeRow,
 } from '$lib/features/drafts/types';
+import { getOrdinalSuffix } from '$lib/ordinal';
 
 interface QuotaSnapshot {
   labId: string;
@@ -146,30 +146,13 @@ function buildLabDistribution(
   return entries;
 }
 
-const ORDINAL_SUFFIXES = ['th', 'st', 'nd', 'rd'] as const;
-
-function toRankKey(preferenceRank: bigint | null) {
-  return preferenceRank === null ? null : Number(preferenceRank);
-}
-
-function isRank(rank: number | null): rank is number {
-  return rank !== null;
-}
-
-export function ordinalChoice(rank: number): string {
-  const mod100 = rank % 100;
-  // 11th, 12th, 13th are exceptions to the normal pattern
-  const suffix = mod100 >= 11 && mod100 <= 13 ? 'th' : (ORDINAL_SUFFIXES[rank % 10] ?? 'th');
-  return `${rank}${suffix} Choice`;
-}
-
 export function buildPreferenceAlignment(
   rows: DraftPreferenceAlignmentRow[],
 ): DraftSummaryChartData['preferenceAlignment'] {
   const countByRank = rollup(
     rows,
     values => d3sum(values, d => d.count),
-    ({ preferenceRank }) => toRankKey(preferenceRank),
+    ({ preferenceRank }) => (preferenceRank === null ? null : Number(preferenceRank)),
   );
   const totalAssigned = d3sum(rows, d => d.count);
   const bordaNumerator = d3sum(rows, ({ preferenceRank, totalRanked, count }) => {
@@ -186,7 +169,10 @@ export function buildPreferenceAlignment(
     .filter((entry): entry is [number, number] => entry[0] !== null && entry[1] > 0)
     .sort(([a], [b]) => a - b);
 
-  const slices = ranked.map(([rank, count]) => ({ label: ordinalChoice(rank), count }));
+  const slices = ranked.map(([rank, count]) => ({
+    label: `${rank}${getOrdinalSuffix(rank)} Choice`,
+    count,
+  }));
 
   const notPreferred = countByRank.get(null) ?? 0;
   if (notPreferred > 0) slices.push({ label: 'Not Preferred', count: notPreferred });
@@ -296,7 +282,7 @@ export function buildLotteryAggregate(
       rollup(
         values,
         bucketValues => d3sum(bucketValues, d => d.count),
-        ({ preferenceRank }) => toRankKey(preferenceRank),
+        ({ preferenceRank }) => (preferenceRank === null ? null : Number(preferenceRank)),
       ),
     ({ labId }) => labId,
   );
@@ -312,7 +298,11 @@ export function buildLotteryAggregate(
   }
 
   const allRankedRanks = Array.from(
-    union(...Array.from(labBuckets.values(), buckets => Array.from(buckets.keys()).filter(isRank))),
+    union(
+      ...Array.from(labBuckets.values(), buckets =>
+        Array.from(buckets.keys()).filter((rank): rank is number => rank !== null),
+      ),
+    ),
   ).sort((a, b) => a - b);
 
   const outcomeStacks = Array.from(labBuckets.entries())
@@ -321,7 +311,8 @@ export function buildLotteryAggregate(
       const ordered: LotteryOutcomeBucket[] = [];
       for (const rank of allRankedRanks) {
         const count = buckets.get(rank) ?? 0;
-        if (count > 0) ordered.push({ rank, label: ordinalChoice(rank), count });
+        if (count > 0)
+          ordered.push({ rank, label: `${rank}${getOrdinalSuffix(rank)} Choice`, count });
       }
       const notPreferred = buckets.get(null) ?? 0;
       if (notPreferred > 0)
@@ -335,22 +326,6 @@ export function buildLotteryAggregate(
     outcomeStacks,
   };
 }
-
-export const EMPTY_INTERVENTIONS_AGGREGATE: InterventionsAggregate = {
-  statCards: { poolSize: 0, totalLotteryQuota: 0, delta: 0 },
-  dumbbellRows: [],
-};
-
-export const EMPTY_LOTTERY_AGGREGATE: LotteryAggregate = {
-  statCards: {
-    poolSize: 0,
-    topChoice: 0,
-    rankedLab: 0,
-    unranked: 0,
-    medianRankHonored: null,
-  },
-  outcomeStacks: [],
-};
 
 export function buildDraftSummaryChartData(
   assignmentCounts: DraftAssignmentCountByAttribute[],

@@ -6,7 +6,6 @@ import {
   buildInterventionsAggregate,
   buildLotteryAggregate,
   buildPreferenceAlignment,
-  ordinalChoice,
 } from './assignment-summary';
 
 describe('buildDraftAssignmentSummary', () => {
@@ -88,31 +87,6 @@ describe('buildDraftAssignmentSummary', () => {
         assignedMax: 0,
       },
     ]);
-  });
-});
-
-describe('ordinalChoice', () => {
-  test('formats standard ordinal suffixes', () => {
-    expect(ordinalChoice(1)).toBe('1st Choice');
-    expect(ordinalChoice(2)).toBe('2nd Choice');
-    expect(ordinalChoice(3)).toBe('3rd Choice');
-    expect(ordinalChoice(4)).toBe('4th Choice');
-    expect(ordinalChoice(5)).toBe('5th Choice');
-    expect(ordinalChoice(9)).toBe('9th Choice');
-    expect(ordinalChoice(10)).toBe('10th Choice');
-  });
-
-  test('handles teens as exceptions', () => {
-    expect(ordinalChoice(11)).toBe('11th Choice');
-    expect(ordinalChoice(12)).toBe('12th Choice');
-    expect(ordinalChoice(13)).toBe('13th Choice');
-  });
-
-  test('resumes normal suffixes after teens', () => {
-    expect(ordinalChoice(21)).toBe('21st Choice');
-    expect(ordinalChoice(22)).toBe('22nd Choice');
-    expect(ordinalChoice(23)).toBe('23rd Choice');
-    expect(ordinalChoice(24)).toBe('24th Choice');
   });
 });
 
