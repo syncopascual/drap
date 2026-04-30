@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, Heading, Section, Text } from 'better-svelte-email';
+  import { Button, Heading, Section, Text } from '@better-svelte-email/components';
 
   import { ORIGIN } from '$lib/env';
 

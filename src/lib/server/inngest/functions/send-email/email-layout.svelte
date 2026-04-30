@@ -1,5 +1,14 @@
 <script lang="ts">
-  import { Body, Container, Head, Html, Img, Preview, Section, Text } from 'better-svelte-email';
+  import {
+    Body,
+    Container,
+    Head,
+    Html,
+    Img,
+    Preview,
+    Section,
+    Text,
+  } from '@better-svelte-email/components';
   import type { Snippet } from 'svelte';
 
   import { ORIGIN } from '$lib/env';

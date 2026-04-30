@@ -3,7 +3,7 @@ import type { ComponentProps } from 'svelte';
 import { createMimeMessage } from 'mimetext/node';
 import { NonRetriableError } from 'inngest';
 import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
-import { toPlainText } from 'better-svelte-email/render';
+import { toPlainText } from '@better-svelte-email/server';
 
 import * as dbSchema from '$lib/server/database/schema';
 import { assertOptional } from '$lib/server/assert';
