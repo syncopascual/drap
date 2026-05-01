@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BarChart } from 'layerchart';
+  import { BarChart } from 'layerchart/svg';
   import { cubicOut } from 'svelte/easing';
   import { format } from 'd3-format';
   import { prefersReducedMotion } from 'svelte/motion';

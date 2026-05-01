@@ -1,6 +1,6 @@
 <script lang="ts">
   import CircleHelpIcon from '@lucide/svelte/icons/circle-help';
-  import { BarChart } from 'layerchart';
+  import { BarChart } from 'layerchart/svg';
 
   import * as Card from '$lib/components/ui/card';
   import * as Chart from '$lib/components/ui/chart';

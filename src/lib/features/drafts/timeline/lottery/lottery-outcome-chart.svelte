@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BarChart } from 'layerchart';
+  import { BarChart } from 'layerchart/svg';
   import { format } from 'd3-format';
 
   import * as Card from '$lib/components/ui/card';

@@ -1,7 +1,7 @@
 <script lang="ts">
   import CircleHelpIcon from '@lucide/svelte/icons/circle-help';
   import { format } from 'd3-format';
-  import { PieChart } from 'layerchart';
+  import { PieChart } from 'layerchart/svg';
 
   import * as Card from '$lib/components/ui/card';
   import * as Chart from '$lib/components/ui/chart';

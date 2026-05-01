@@ -1,7 +1,7 @@
 <script lang="ts">
   import { cubicOut } from 'svelte/easing';
   import { format } from 'd3-format';
-  import { LineChart } from 'layerchart';
+  import { LineChart } from 'layerchart/svg';
   import type { MotionOptions } from 'layerchart/utils/motion.svelte';
   import { prefersReducedMotion } from 'svelte/motion';
   import { scalePoint } from 'd3-scale';

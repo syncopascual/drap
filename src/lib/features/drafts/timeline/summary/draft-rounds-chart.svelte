@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Area, AreaChart, LinearGradient } from 'layerchart';
+  import { Area, AreaChart, LinearGradient } from 'layerchart/svg';
   import { cubicOut } from 'svelte/easing';
   import { cumsum } from 'd3-array';
   import { format } from 'd3-format';
