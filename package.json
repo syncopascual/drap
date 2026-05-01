@@ -81,8 +81,8 @@
   "devDependencies": {
     "@bastidood/eslint-plugin-imsort": "^0.12.0",
     "@eslint/js": "^10.0.1",
-    "@html-eslint/eslint-plugin": "^0.59.0",
-    "@html-eslint/eslint-plugin-svelte": "^0.59.0",
+    "@html-eslint/eslint-plugin": "^0.60.0",
+    "@html-eslint/eslint-plugin-svelte": "^0.60.0",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/api-logs": "^0.216.0",
     "@playwright/test": "^1.59.1",
