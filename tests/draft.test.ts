@@ -948,15 +948,17 @@ test.describe('Draft Lifecycle', () => {
     });
 
     test('registered draftees do not fetch before the sheet opens', async ({ adminPage }) => {
-      const noResponseBeforeOpen = adminPage.waitForResponse(
-        response => new URL(response.url()).pathname === '/dashboard/drafts/1/draftees',
-        { timeout: 1000 },
-      );
+      const noResponseBeforeOpen = expect(
+        adminPage.waitForResponse(
+          response => new URL(response.url()).pathname === '/dashboard/drafts/1/draftees',
+          { timeout: 1000 },
+        ),
+      ).rejects.toThrow();
 
       await adminPage.goto('/dashboard/drafts/1/');
       await expectVisibleButtons(adminPage, ['See Registered Students']);
       await adminPage.waitForLoadState('networkidle');
-      await expect(noResponseBeforeOpen).rejects.toThrow();
+      await noResponseBeforeOpen;
     });
 
     test('registered draftees fetch when the sheet opens', async ({ adminPage }) => {
@@ -1084,15 +1086,17 @@ test.describe('Draft Lifecycle', () => {
     test('pending selection does not fetch until Registered Students tab is opened', async ({
       adminPage,
     }) => {
-      const noResponseBeforeOpen = adminPage.waitForResponse(
-        response => new URL(response.url()).pathname === '/dashboard/drafts/1/draftees',
-        { timeout: 1000 },
-      );
+      const noResponseBeforeOpen = expect(
+        adminPage.waitForResponse(
+          response => new URL(response.url()).pathname === '/dashboard/drafts/1/draftees',
+          { timeout: 1000 },
+        ),
+      ).rejects.toThrow();
 
       await adminPage.goto('/dashboard/drafts/1/');
       await expect(adminPage.locator('#regular-round-summary-chart')).toBeVisible();
       await adminPage.waitForLoadState('networkidle');
-      await expect(noResponseBeforeOpen).rejects.toThrow();
+      await noResponseBeforeOpen;
 
       const initialResponse = adminPage.waitForResponse(
         response => new URL(response.url()).pathname === '/dashboard/drafts/1/draftees',
@@ -1133,12 +1137,14 @@ test.describe('Draft Lifecycle', () => {
       await expect(adminPage.getByRole('tabpanel', { name: 'Registered Students' })).toBeVisible();
       await initialResponse;
 
-      const noResponseOnSwitch = adminPage.waitForResponse(
-        response => new URL(response.url()).pathname === '/dashboard/drafts/1/draftees',
-        { timeout: 1000 },
-      );
+      const noResponseOnSwitch = expect(
+        adminPage.waitForResponse(
+          response => new URL(response.url()).pathname === '/dashboard/drafts/1/draftees',
+          { timeout: 1000 },
+        ),
+      ).rejects.toThrow();
       await selectRegularStudentsView(adminPage, 'Already Drafted');
-      await expect(noResponseOnSwitch).rejects.toThrow();
+      await noResponseOnSwitch;
     });
 
     test('switching back to pending selection does not refetch after initial load', async ({
@@ -1154,12 +1160,14 @@ test.describe('Draft Lifecycle', () => {
       await initialResponse;
       await selectRegularStudentsView(adminPage, 'Already Drafted');
 
-      const noResponseOnSwitch = adminPage.waitForResponse(
-        response => new URL(response.url()).pathname === '/dashboard/drafts/1/draftees',
-        { timeout: 1000 },
-      );
+      const noResponseOnSwitch = expect(
+        adminPage.waitForResponse(
+          response => new URL(response.url()).pathname === '/dashboard/drafts/1/draftees',
+          { timeout: 1000 },
+        ),
+      ).rejects.toThrow();
       await selectRegularStudentsView(adminPage, 'Pending Selection');
-      await expect(noResponseOnSwitch).rejects.toThrow();
+      await noResponseOnSwitch;
     });
 
     test.describe('NDSL', () => {
@@ -1908,15 +1916,17 @@ test.describe('Draft Lifecycle', () => {
     });
 
     test('eligible for lottery does not fetch before the sheet opens', async ({ adminPage }) => {
-      const noResponseBeforeOpen = adminPage.waitForResponse(
-        response => new URL(response.url()).pathname === '/dashboard/drafts/1/draftees',
-        { timeout: 1000 },
-      );
+      const noResponseBeforeOpen = expect(
+        adminPage.waitForResponse(
+          response => new URL(response.url()).pathname === '/dashboard/drafts/1/draftees',
+          { timeout: 1000 },
+        ),
+      ).rejects.toThrow();
 
       await adminPage.goto('/dashboard/drafts/1/');
       await expectVisibleButtons(adminPage, ['Eligible for Lottery']);
       await adminPage.waitForLoadState('networkidle');
-      await expect(noResponseBeforeOpen).rejects.toThrow();
+      await noResponseBeforeOpen;
     });
 
     test('eligible for lottery fetches when the sheet opens', async ({ adminPage }) => {
